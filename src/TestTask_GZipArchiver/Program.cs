@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.IO.Compression;
 using TestTask_GZipArchiver.Core.Models;
 using TestTask_GZipArchiver.Core.Services;
@@ -15,9 +16,10 @@ namespace TestTask_GZipArchiver
             {
                 RunningArguments.Bind(args);
             }
-            catch (Exception ex)
+            catch (ArgumentException ex)
             {
-                // TODO handle exceptions (binding errors)
+                Console.WriteLine(ex.Message);
+                return;
             }
 
             if (RunningArguments.Current.DoShowHelp)
