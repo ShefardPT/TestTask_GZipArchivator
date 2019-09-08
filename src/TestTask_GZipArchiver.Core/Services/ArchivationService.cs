@@ -109,12 +109,40 @@ namespace TestTask_GZipArchiver.Core.Services
 
         private Stream DecompressBlock(FileStream inputFile, int blockNumber)
         {
-            throw new NotImplementedException();
+            var result = new MemoryStream();
+
+            var bytesToReadCount = GetBytesToReadCount(inputFile.Length, inputFile.Position);
+            var buffer = new byte[bytesToReadCount];
+            inputFile.Read(buffer, 0, bytesToReadCount);
+
+            using (var originalBlockStream = new MemoryStream(buffer))
+            {
+                using (var gzipStream = new GZipStream(originalBlockStream, CompressionMode.Decompress))
+                {
+                    gzipStream.CopyTo(result);
+                }
+            }
+
+            return result;
         }
 
         private Stream CompressBlock(FileStream inputFile, int blockNumber)
         {
-            throw new NotImplementedException();
+            var result = new MemoryStream();
+
+            var bytesToReadCount = GetBytesToReadCount(inputFile.Length, inputFile.Position);
+            var buffer = new byte[bytesToReadCount];
+            inputFile.Read(buffer, 0, bytesToReadCount);
+
+            using (var originalBlockStream = new MemoryStream(buffer))
+            {
+                using (var gzipStream = new GZipStream(originalBlockStream, CompressionMode.Compress))
+                {
+                    gzipStream.CopyTo(result);
+                }
+            }
+
+            return result;
         }
 
         private void WriteBlock(Stream dataBlock, FileStream outputFile, int blockNumber)
