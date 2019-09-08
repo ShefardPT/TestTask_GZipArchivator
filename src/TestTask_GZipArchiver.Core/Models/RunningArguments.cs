@@ -41,7 +41,8 @@ namespace TestTask_GZipArchiver.Core.Models
             _isInitialized = true;
         }
 
-        // According the specification format is "<appname.exe> compress|decompress <input file path> [output file path]"
+        // According the specification format is
+        // "<appname.exe> compress|decompress <input file path> [output file path]"
         public static void Bind(string[] args)
         {
             // Adjustment args to lowercase
@@ -65,6 +66,13 @@ namespace TestTask_GZipArchiver.Core.Models
                 return;
             }
 
+            // Check is user needs help has been passed. The args format is being checked now.
+            if (args.Length < 2 || 3 < args.Length)
+            {
+                throw new ArgumentException
+                    ("Input parameters are invalid. Use \"gziparchiver -h\" to get help.");
+            }
+
             var isMode = Enum.TryParse<CompressionMode>(args[0], true, out var mode);
 
             if (!isMode)
@@ -77,14 +85,26 @@ namespace TestTask_GZipArchiver.Core.Models
             if (!inputFile.Exists)
             {
                 throw new ArgumentException
-                    ("Specified input file wasn't found, please type valid path. Use \"gziparchiver -h\" to get help.");
+                    ($"Specified input file \"{inputFile.FullName}\" wasn't found, " +
+                     "please type valid file name. Use \"gziparchiver -h\" to get help.");
             }
 
-            var outputFile = new FileInfo(args[2]);
+            FileInfo outputFile;
+
+            if (args.Length == 3)
+            {
+                outputFile = new FileInfo(args[2]); 
+            }
+            else
+            {
+                outputFile = new FileInfo($"{inputFile.FullName}.gz");
+            }
+
             if (outputFile.Exists)
             {
                 throw new ArgumentException
-                    ("Specified output file is already existing, please type valid path. Use \"gziparchiver -h\" to get help.");
+                    ($"Specified output file \"{outputFile.FullName}\" is already existing, " +
+                     "please type valid file name. Use \"gziparchiver -h\" to get help.");
             }
             
             _instance = new RunningArguments()
