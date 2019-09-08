@@ -107,7 +107,7 @@ namespace TestTask_GZipArchiver.Core.Services
             outputFileStream.Dispose();
         }
 
-        private Stream DecompressBlock(FileStream inputFile, int blockNumber)
+        private MemoryStream DecompressBlock(FileStream inputFile, int blockNumber)
         {
             var result = new MemoryStream();
 
@@ -126,7 +126,7 @@ namespace TestTask_GZipArchiver.Core.Services
             return result;
         }
 
-        private Stream CompressBlock(FileStream inputFile, int blockNumber)
+        private MemoryStream CompressBlock(FileStream inputFile, int blockNumber)
         {
             var result = new MemoryStream();
 
@@ -145,9 +145,10 @@ namespace TestTask_GZipArchiver.Core.Services
             return result;
         }
 
-        private void WriteBlock(Stream dataBlock, FileStream outputFile, int blockNumber)
+        private void WriteBlock(MemoryStream dataBlock, FileStream outputFile, int blockNumber)
         {
-            throw new NotImplementedException();
+            // Length of dataBlock would never overflow Int32 value in theory as BlockSize has Int32 type
+            outputFile.Write(dataBlock.ToArray(), 0, (int) dataBlock.Length);
         }
 
         private int GetBytesToReadCount(long streamLength, long streamPosition)
