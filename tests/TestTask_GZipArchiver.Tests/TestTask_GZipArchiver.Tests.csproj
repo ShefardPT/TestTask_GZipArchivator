@@ -15,4 +15,8 @@
     <ProjectReference Include="..\..\src\TestTask_GZipArchiver\TestTask_GZipArchiver.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="files\" />
+  </ItemGroup>
+
 </Project>
