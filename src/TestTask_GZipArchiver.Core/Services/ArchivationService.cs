@@ -17,7 +17,6 @@ namespace TestTask_GZipArchiver.Core.Services
         private ApplicationSettings _settings;
         private string _instanceId;
         private Semaphore _semaphore;
-        private object _locker = new object();
 
         public ArchivationService()
         {
@@ -47,7 +46,10 @@ namespace TestTask_GZipArchiver.Core.Services
                     4096,
                     FileOptions.Asynchronous);
 
-            var blocksCount = inputFileStream.Length / _settings.BlockSize + 1;
+            int blocksCount = (int) (inputFileStream.Length / _settings.BlockSize + 1);
+
+            var queueSynchronizer = new QueueSynchronizer();
+            var countdownEvent = new CountdownEvent(blocksCount);
 
             for (int i = 0; i < blocksCount; i++)
             {
@@ -57,10 +59,15 @@ namespace TestTask_GZipArchiver.Core.Services
                 {
                     _semaphore.WaitOne();
 
-                    // TODO SOLVE SYNCHRONIZATION ISSUE
-                    using (var compressedBlock = CompressBlock(inputFileStream, blockNumber))
+                    using (var compressedBlock = CompressBlock(inputFileStream))
                     {
-                        WriteBlock(compressedBlock, outputFileStream, blockNumber);
+                        queueSynchronizer.GetInQueue(blockNumber);
+
+                        WriteBlock(compressedBlock, outputFileStream);
+
+                        queueSynchronizer.LeaveQueue();
+
+                        countdownEvent.Signal();
                     }
 
                     _semaphore.Release();
@@ -81,7 +88,10 @@ namespace TestTask_GZipArchiver.Core.Services
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None,
                 4096, FileOptions.Asynchronous);
 
-            var blocksCount = inputFileStream.Length / _settings.BlockSize + 1;
+            int blocksCount = (int) (inputFileStream.Length / _settings.BlockSize + 1);
+
+            var queueSynchronizer = new QueueSynchronizer();
+            var countdownEvent = new CountdownEvent(blocksCount);
 
             for (int i = 0; i < blocksCount; i++)
             {
@@ -91,10 +101,15 @@ namespace TestTask_GZipArchiver.Core.Services
                 {
                     _semaphore.WaitOne();
 
-                    // TODO SOLVE SYNCHRONIZATION ISSUE
-                    using (var decompressedBlock = DecompressBlock(inputFileStream, blockNumber))
+                    using (var decompressedBlock = DecompressBlock(inputFileStream))
                     {
-                        WriteBlock(decompressedBlock, outputFileStream, blockNumber);
+                        queueSynchronizer.GetInQueue(blockNumber);
+
+                        WriteBlock(decompressedBlock, outputFileStream);
+
+                        queueSynchronizer.LeaveQueue();
+
+                        countdownEvent.Signal();
                     }
 
                     _semaphore.Release();
@@ -107,7 +122,7 @@ namespace TestTask_GZipArchiver.Core.Services
             outputFileStream.Dispose();
         }
 
-        private MemoryStream DecompressBlock(FileStream inputFile, int blockNumber)
+        private MemoryStream DecompressBlock(FileStream inputFile)
         {
             var result = new MemoryStream();
 
@@ -126,7 +141,7 @@ namespace TestTask_GZipArchiver.Core.Services
             return result;
         }
 
-        private MemoryStream CompressBlock(FileStream inputFile, int blockNumber)
+        private MemoryStream CompressBlock(FileStream inputFile)
         {
             var result = new MemoryStream();
 
@@ -145,7 +160,7 @@ namespace TestTask_GZipArchiver.Core.Services
             return result;
         }
 
-        private void WriteBlock(MemoryStream dataBlock, FileStream outputFile, int blockNumber)
+        private void WriteBlock(MemoryStream dataBlock, FileStream outputFile)
         {
             // Length of dataBlock would never overflow Int32 value in theory as BlockSize has Int32 type
             outputFile.Write(dataBlock.ToArray(), 0, (int) dataBlock.Length);
