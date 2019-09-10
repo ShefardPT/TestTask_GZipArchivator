@@ -19,8 +19,8 @@ namespace TestTask_GZipArchiver.Tests
         [Test]
         public void Should_compress_file()
         {
-            var inputFile = new FileInfo("..\\..\\files\\file_to_compress.pdf");
-            var outputFile = new FileInfo("..\\..\\files\\file_to_compress.pdf.gz");
+            var inputFile = new FileInfo("..\\..\\..\\files\\file_to_compress.pdf");
+            var outputFile = new FileInfo("..\\..\\..\\files\\file_to_compress.pdf.gz");
 
             var args = new[]
             {
@@ -40,8 +40,8 @@ namespace TestTask_GZipArchiver.Tests
         [Test]
         public void Should_decompress_file()
         {
-            var inputFile = new FileInfo("..\\..\\files\\file_to_decompress.pdf.gz");
-            var outputFile = new FileInfo("..\\..\\files\\file_to_decompress.pdf");
+            var inputFile = new FileInfo("..\\..\\..\\files\\file_to_decompress.pdf.gz");
+            var outputFile = new FileInfo("..\\..\\..\\files\\file_to_decompress.pdf");
 
             var args = new[]
             {

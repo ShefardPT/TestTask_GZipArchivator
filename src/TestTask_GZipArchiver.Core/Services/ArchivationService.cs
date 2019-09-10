@@ -76,6 +76,8 @@ namespace TestTask_GZipArchiver.Core.Services
                 thread.Start();
             }
 
+            countdownEvent.Wait();
+
             inputFileStream.Dispose();
             outputFileStream.Dispose();
         }
@@ -117,6 +119,9 @@ namespace TestTask_GZipArchiver.Core.Services
 
                 thread.Start();
             }
+
+
+            countdownEvent.Wait();
 
             inputFileStream.Dispose();
             outputFileStream.Dispose();
