@@ -31,7 +31,7 @@ namespace TestTask_GZipArchiver.Tests
                 outputFile.FullName
             };
 
-            RunningArguments.Bind(args);
+            RunningArguments.Set(args);
 
             _sut.CompressFile(RunningArguments.Current.InputPath, RunningArguments.Current.OutputPath);
 
@@ -57,7 +57,7 @@ namespace TestTask_GZipArchiver.Tests
                 outputFile.FullName
             };
 
-            RunningArguments.Bind(args);
+            RunningArguments.Set(args);
 
             _sut.DecompressFile(RunningArguments.Current.InputPath, RunningArguments.Current.OutputPath);
 
