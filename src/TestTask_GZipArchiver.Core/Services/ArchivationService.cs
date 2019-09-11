@@ -137,15 +137,23 @@ namespace TestTask_GZipArchiver.Core.Services
 
             using (var originalBlockStream = new MemoryStream(buffer))
             {
-                using (var gzipStream = new GZipStream(originalBlockStream, CompressionMode.Decompress))
+                using (var decompressedData = new MemoryStream())
                 {
-                    gzipStream.CopyTo(result);
+                    using (var gzipStream = new GZipStream(originalBlockStream, CompressionMode.Decompress))
+                    {
+                        gzipStream.CopyTo(decompressedData);
+                        decompressedData.Seek(0, SeekOrigin.Begin);
+                        decompressedData.CopyTo(result);
+                    } 
                 }
             }
 
             return result;
         }
 
+        // TODO
+        // Maybe there is a sence to return byte[] instead of MemoryStream as WriteBlock needs byte[] only
+        // and additional MemoryStream would not be created
         private MemoryStream CompressBlock(FileStream inputFile)
         {
             var result = new MemoryStream();
@@ -156,11 +164,18 @@ namespace TestTask_GZipArchiver.Core.Services
 
             using (var originalBlockStream = new MemoryStream(buffer))
             {
-                using (var gzipStream = new GZipStream(originalBlockStream, CompressionMode.Compress))
+                using (var compressedData = new MemoryStream())
                 {
-                    gzipStream.CopyTo(result);
+                    using (var gzipStream = new GZipStream(compressedData, CompressionMode.Compress))
+                    {
+                        originalBlockStream.CopyTo(gzipStream);
+                        compressedData.Seek(0, SeekOrigin.Begin);
+                        compressedData.CopyTo(result);
+                    } 
                 }
             }
+
+            result.Seek(0, SeekOrigin.Begin);
 
             return result;
         }

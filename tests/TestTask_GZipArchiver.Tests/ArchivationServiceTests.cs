@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using System.IO.Compression;
 using NUnit.Framework;
 using TestTask_GZipArchiver.Core.Models;
 using TestTask_GZipArchiver.Core.Services;
@@ -35,6 +37,11 @@ namespace TestTask_GZipArchiver.Tests
 
             Assert.That(outputFile.Exists);
             Assert.That(outputFile.Length < inputFile.Length);
+
+            if (outputFile.Exists)
+            {
+                outputFile.Delete();
+            }
         }
 
         [Test]
@@ -52,10 +59,15 @@ namespace TestTask_GZipArchiver.Tests
 
             RunningArguments.Bind(args);
 
-            _sut.CompressFile(RunningArguments.Current.InputPath, RunningArguments.Current.OutputPath);
+            _sut.DecompressFile(RunningArguments.Current.InputPath, RunningArguments.Current.OutputPath);
 
             Assert.That(outputFile.Exists);
             Assert.That(outputFile.Length < inputFile.Length);
+
+            if (outputFile.Exists)
+            {
+                outputFile.Delete();
+            }
         }
     }
 }
