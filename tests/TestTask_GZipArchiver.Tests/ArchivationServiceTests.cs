@@ -24,6 +24,11 @@ namespace TestTask_GZipArchiver.Tests
             var inputFile = new FileInfo("..\\..\\..\\files\\file_to_compress.pdf");
             var outputFile = new FileInfo("..\\..\\..\\files\\file_to_compress.pdf.gz");
 
+            if (outputFile.Exists)
+            {
+                outputFile.Delete();
+            }
+
             var args = new[]
             {
                 "compress",
@@ -37,11 +42,6 @@ namespace TestTask_GZipArchiver.Tests
 
             Assert.That(outputFile.Exists);
             Assert.That(outputFile.Length < inputFile.Length);
-
-            if (outputFile.Exists)
-            {
-                //outputFile.Delete();
-            }
         }
 
         [Test]
@@ -49,6 +49,11 @@ namespace TestTask_GZipArchiver.Tests
         {
             var inputFile = new FileInfo("..\\..\\..\\files\\file_to_decompress.pdf.gz");
             var outputFile = new FileInfo("..\\..\\..\\files\\file_to_decompress.pdf");
+            
+            if (outputFile.Exists)
+            {
+                outputFile.Delete();
+            }
 
             var args = new[]
             {
@@ -63,11 +68,6 @@ namespace TestTask_GZipArchiver.Tests
 
             Assert.That(outputFile.Exists);
             Assert.That(outputFile.Length < inputFile.Length);
-
-            if (outputFile.Exists)
-            {
-                outputFile.Delete();
-            }
         }
     }
 }

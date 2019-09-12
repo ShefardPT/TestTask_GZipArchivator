@@ -17,23 +17,23 @@ namespace TestTask_GZipArchiver.Core.Models
 
         public void GetInQueue(int pos)
         {
-            Console.WriteLine($"Block {pos} has got in queue.");
+            //Console.WriteLine($"Block {pos} has got in queue.");
 
             while (pos != _awaitedPos)
             {
-                Console.WriteLine($"Block {pos} has tried to move further.");
+                //Console.WriteLine($"Block {pos} has tried to move further.");
                 
                 _lock.WaitOne();
             }
 
             _lock.Reset();
 
-            Console.WriteLine($"Block {pos} has moved further.");
+            //Console.WriteLine($"Block {pos} has moved further.");
         }
 
         public void LeaveQueue()
         {
-            Console.WriteLine($"Block {_awaitedPos} has left queue.");
+            //Console.WriteLine($"Block {_awaitedPos} has left queue.");
 
             _awaitedPos++;
 
