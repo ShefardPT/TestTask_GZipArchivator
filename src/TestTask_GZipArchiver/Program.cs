@@ -43,12 +43,18 @@ namespace TestTask_GZipArchiver
                 {
                     archiverAction.Invoke(RunningArguments.Current.InputPath, RunningArguments.Current.OutputPath);
                 }
+                catch(ArgumentException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
                 catch (Exception ex)
                 {
                     Console.WriteLine(ex.Message);
                     Console.WriteLine(ex.StackTrace);
                     Console.WriteLine("The unhandled exception has been thrown. Please create bug ticket on " +
                                       "https://github.com/ShefardPT/TestTask_GZipArchiver/issues");
+                    return;
                 }
             }
         }

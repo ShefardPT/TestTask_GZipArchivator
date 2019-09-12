@@ -54,7 +54,6 @@ namespace TestTask_GZipArchiver.Core.Models
             lock (_locker)
             {
                 this.BaseStream.Seek(pos, SeekOrigin.Begin);
-
                 this.Read(result);
             }
 
@@ -64,11 +63,11 @@ namespace TestTask_GZipArchiver.Core.Models
         private void InitBlockStream(GZipBlocksMap gZipBlocksMap)
         {
             BlockSize = gZipBlocksMap.BlockSize;
-
             _lengthOfUnzipped = gZipBlocksMap.UnzippedLength;
-
             _blocksMap = gZipBlocksMap.BlocksMap;
 
+            // BlockSize of 1Mb size will be sufficient fo files of 2^22 GB
+            // So casting exception is unlikely
             BlocksCount = (int)(_lengthOfUnzipped / BlockSize + 1);
 
             // This field's value will not overflow int as blocksize is int.

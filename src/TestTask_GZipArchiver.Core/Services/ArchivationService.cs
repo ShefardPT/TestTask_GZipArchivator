@@ -16,16 +16,25 @@ namespace TestTask_GZipArchiver.Core.Services
         private ApplicationSettings _settings;
         private string _instanceId;
         private Semaphore _semaphore;
+        private ValidationService _validationSrv;
 
         public ArchivationService()
         {
             _settings = ApplicationSettings.Current;
             _instanceId = Guid.NewGuid().ToString("N");
             _semaphore = new Semaphore(_settings.ThreadsCount, _settings.ThreadsCount, _instanceId);
+            _validationSrv = new ValidationService();
         }
 
+        // Compresses any non-gzip file to gzip archive
         public void CompressFile(string input, string output)
         {
+            var inputFileCheck = _validationSrv.IsFileGZipArchive(input);
+            if (inputFileCheck.IsValid)
+            {
+                throw new ArgumentException("The specified input file is GZip archive already.");
+            }
+
             var inputFileStream = new FileBlockStream(input, FileMode.Open, FileAccess.Read, FileShare.None, _settings.BlockSize);
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             var gzipStream = new GZipStream(outputFileStream, CompressionMode.Compress);
@@ -66,8 +75,13 @@ namespace TestTask_GZipArchiver.Core.Services
 
         public void DecompressFile(string input, string output)
         {
-            var blocksMap = new GZipBlocksMap(input, _settings.BlockSize);
+            var inputFileCheck = _validationSrv.IsFileGZipArchive(input);
+            if (!inputFileCheck.IsValid)
+            {
+                throw new ArgumentException("The specified input file is not GZip archive.");
+            }
 
+            var blocksMap = new GZipBlocksMap(input, _settings.BlockSize);
             var inputFileStream = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read);
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
 
