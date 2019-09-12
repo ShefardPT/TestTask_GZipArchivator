@@ -29,13 +29,6 @@ namespace TestTask_GZipArchiver
             }
             else
             {
-
-
-                var archivationProcessor = new ArchivationProcessor()
-
-
-
-
                 var archivationSrv = new ArchivationService();
 
                 var actionDict = new Dictionary<CompressionMode, Action<string, string>>()

@@ -40,7 +40,7 @@ namespace TestTask_GZipArchiver.Tests
 
             if (outputFile.Exists)
             {
-                outputFile.Delete();
+                //outputFile.Delete();
             }
         }
 
