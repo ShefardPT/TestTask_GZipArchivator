@@ -91,11 +91,11 @@ namespace TestTask_GZipArchiver.Core.Models
         private object _locker = new object();
 
         public int BlockSize { get; private set; }
-        public long BlocksCount { get; private set; }
+        public int BlocksCount { get; private set; }
 
         public byte[] GetBlockBytes(int blockNumber)
         {
-            var blockSize = BlocksCount == blockNumber
+            var blockSize = BlocksCount == blockNumber + 1
                 ? _bytesForLastBlockCount
                 : BlockSize;
 
@@ -115,7 +115,7 @@ namespace TestTask_GZipArchiver.Core.Models
         private void InitBlockStream(int blockSize)
         {
             BlockSize = blockSize;
-            BlocksCount = this.Length / BlockSize + 1;
+            BlocksCount = (int) (this.Length / BlockSize + 1);
 
             // This field's value will not overflow int as blocksize is int.
             _bytesForLastBlockCount = (int) (this.Length % BlockSize);

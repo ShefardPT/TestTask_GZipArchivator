@@ -35,24 +35,26 @@ namespace TestTask_GZipArchiver.Core.Models
 
         private int _bytesForLastBlockCount;
         private object _locker = new object();
+        private long _lengthOfUnzipped;
+        private long[] _blocksMap;
 
         public int BlockSize { get; private set; }
-        public long BlocksCount { get; private set; }
+        public int BlocksCount { get; private set; }
 
         public byte[] GetBlockBytes(int blockNumber)
         {
-            var blockSize = BlocksCount == blockNumber
+            var blockSize = BlocksCount == blockNumber + 1
                 ? _bytesForLastBlockCount
                 : BlockSize;
 
             byte[] result = new byte[blockSize];
 
-            var pos = BlockSize * blockNumber;
+            var pos = _blocksMap[blockNumber];
 
             lock (_locker)
             {
                 this.BaseStream.Seek(pos, SeekOrigin.Begin);
-                this.Read(result, 0, blockSize);
+                this.Read(result);
             }
 
             return result;
@@ -61,10 +63,27 @@ namespace TestTask_GZipArchiver.Core.Models
         private void InitBlockStream(int blockSize)
         {
             BlockSize = blockSize;
-            BlocksCount = this.BaseStream.Length / BlockSize + 1;
+
+            _lengthOfUnzipped = 0;
+
+            var buffer = new byte[BlockSize];
+            var lengthRead = 0;
+            var blocksMap = new List<long>() { 0 };
+
+            while ((lengthRead = this.Read(buffer)) > 0)
+            {
+                blocksMap.Add(this.BaseStream.Position);
+                _lengthOfUnzipped += lengthRead;
+            }
+
+            this.BaseStream.Seek(0, SeekOrigin.Begin);
+
+            _blocksMap = blocksMap.ToArray();
+
+            BlocksCount = (int) (_lengthOfUnzipped / BlockSize + 1);
 
             // This field's value will not overflow int as blocksize is int.
-            _bytesForLastBlockCount = (int)(this.BaseStream.Length % BlockSize);
+            _bytesForLastBlockCount = (int)(_lengthOfUnzipped % BlockSize);
         }
     }
 }

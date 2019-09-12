@@ -10,6 +10,7 @@ namespace TestTask_GZipArchiver.Core.Models
         private static bool _isInitialized;
 
         public int ThreadsCount { get; set; }
+        // Size of block lower than 1 MB strictly NOT recommended
         public int BlockSize { get; set; }
 
         private ApplicationSettings()

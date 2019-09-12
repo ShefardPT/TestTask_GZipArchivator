@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using NUnit.Framework;
@@ -40,6 +41,8 @@ namespace TestTask_GZipArchiver.Tests
 
             _sut.CompressFile(RunningArguments.Current.InputPath, RunningArguments.Current.OutputPath);
 
+            outputFile = new FileInfo("..\\..\\..\\files\\file_to_compress.pdf.gz");
+
             Assert.That(outputFile.Exists);
             Assert.That(outputFile.Length < inputFile.Length);
         }
@@ -49,7 +52,7 @@ namespace TestTask_GZipArchiver.Tests
         {
             var inputFile = new FileInfo("..\\..\\..\\files\\file_to_decompress.pdf.gz");
             var outputFile = new FileInfo("..\\..\\..\\files\\file_to_decompress.pdf");
-            
+
             if (outputFile.Exists)
             {
                 outputFile.Delete();
@@ -66,8 +69,10 @@ namespace TestTask_GZipArchiver.Tests
 
             _sut.DecompressFile(RunningArguments.Current.InputPath, RunningArguments.Current.OutputPath);
 
+            outputFile = new FileInfo("..\\..\\..\\files\\file_to_decompress.pdf");
+
             Assert.That(outputFile.Exists);
-            Assert.That(outputFile.Length < inputFile.Length);
+            Assert.That(outputFile.Length > inputFile.Length);
         }
     }
 }

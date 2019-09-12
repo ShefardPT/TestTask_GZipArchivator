@@ -30,7 +30,7 @@ namespace TestTask_GZipArchiver.Core.Services
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             var gzipStream = new GZipStream(outputFileStream, CompressionMode.Compress);
 
-            int blocksCount = (int)(inputFileStream.Length / _settings.BlockSize + 1);
+            int blocksCount = inputFileStream.BlocksCount;
 
             var queueSynchronizer = new QueueSynchronizer();
             var countdownEvent = new CountdownEvent(blocksCount);
@@ -39,10 +39,10 @@ namespace TestTask_GZipArchiver.Core.Services
             {
                 var blockNumber = i;
 
+                _semaphore.WaitOne();
+
                 var thread = new Thread(() =>
                 {
-                    _semaphore.WaitOne();
-
                     var dataBlock = inputFileStream.GetBlockBytes(blockNumber);
 
                     queueSynchronizer.GetInQueue(blockNumber);
@@ -66,11 +66,11 @@ namespace TestTask_GZipArchiver.Core.Services
 
         public void DecompressFile(string input, string output)
         {
-            var inputFileStream = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.None);
+            var inputFileStream = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read);
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            var gzipStream = new GZipBlockStream(outputFileStream, CompressionMode.Compress, _settings.BlockSize);
+            var gzipStream = new GZipBlockStream(inputFileStream, CompressionMode.Decompress, true, _settings.BlockSize);
 
-            int blocksCount = (int)(inputFileStream.Length / _settings.BlockSize + 1);
+            int blocksCount = gzipStream.BlocksCount;
 
             var queueSynchronizer = new QueueSynchronizer();
             var countdownEvent = new CountdownEvent(blocksCount);
@@ -79,10 +79,10 @@ namespace TestTask_GZipArchiver.Core.Services
             {
                 var blockNumber = i;
 
+                _semaphore.WaitOne();
+
                 var thread = new Thread(() =>
                 {
-                    _semaphore.WaitOne();
-
                     var dataBlock = gzipStream.GetBlockBytes(blockNumber);
 
                     queueSynchronizer.GetInQueue(blockNumber);
