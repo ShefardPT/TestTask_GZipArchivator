@@ -45,7 +45,10 @@ namespace TestTask_GZipArchiver
                 }
                 catch (Exception ex)
                 {
-                    // TODO handle exceptions 
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(ex.StackTrace);
+                    Console.WriteLine("The unhandled exception has been thrown. Please create bug ticket on " +
+                                      "https://github.com/ShefardPT/TestTask_GZipArchiver/issues");
                 }
             }
         }
