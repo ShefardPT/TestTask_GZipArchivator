@@ -66,9 +66,12 @@ namespace TestTask_GZipArchiver.Core.Services
 
         public void DecompressFile(string input, string output)
         {
+            var blocksMap = new GZipBlocksMap(input, _settings.BlockSize);
+
             var inputFileStream = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read);
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            var gzipStream = new GZipBlockStream(inputFileStream, CompressionMode.Decompress, true, _settings.BlockSize);
+
+            var gzipStream = new GZipBlockStream(inputFileStream, CompressionMode.Decompress, blocksMap);
 
             int blocksCount = gzipStream.BlocksCount;
 

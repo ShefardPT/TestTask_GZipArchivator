@@ -7,30 +7,30 @@ using TestTask_GZipArchiver.Core.Models.Interfaces;
 
 namespace TestTask_GZipArchiver.Core.Models
 {
-    public class GZipBlockStream: GZipStream, IBlockStream
+    public class GZipBlockStream : GZipStream, IBlockStream
     {
-        public GZipBlockStream(Stream stream, CompressionLevel compressionLevel, int blockSize) 
+        public GZipBlockStream(Stream stream, CompressionLevel compressionLevel, GZipBlocksMap gZipBlocksMap)
             : base(stream, compressionLevel)
         {
-            InitBlockStream(blockSize);
+            InitBlockStream(gZipBlocksMap);
         }
 
-        public GZipBlockStream(Stream stream, CompressionLevel compressionLevel, bool leaveOpen, int blockSize) 
+        public GZipBlockStream(Stream stream, CompressionLevel compressionLevel, bool leaveOpen, GZipBlocksMap gZipBlocksMap)
             : base(stream, compressionLevel, leaveOpen)
         {
-            InitBlockStream(blockSize);
+            InitBlockStream(gZipBlocksMap);
         }
 
-        public GZipBlockStream(Stream stream, CompressionMode mode, int blockSize) 
+        public GZipBlockStream(Stream stream, CompressionMode mode, GZipBlocksMap gZipBlocksMap)
             : base(stream, mode)
         {
-            InitBlockStream(blockSize);
+            InitBlockStream(gZipBlocksMap);
         }
 
-        public GZipBlockStream(Stream stream, CompressionMode mode, bool leaveOpen, int blockSize) 
+        public GZipBlockStream(Stream stream, CompressionMode mode, bool leaveOpen, GZipBlocksMap gZipBlocksMap)
             : base(stream, mode, leaveOpen)
         {
-            InitBlockStream(blockSize);
+            InitBlockStream(gZipBlocksMap);
         }
 
         private int _bytesForLastBlockCount;
@@ -54,33 +54,22 @@ namespace TestTask_GZipArchiver.Core.Models
             lock (_locker)
             {
                 this.BaseStream.Seek(pos, SeekOrigin.Begin);
+
                 this.Read(result);
             }
 
             return result;
         }
 
-        private void InitBlockStream(int blockSize)
+        private void InitBlockStream(GZipBlocksMap gZipBlocksMap)
         {
-            BlockSize = blockSize;
+            BlockSize = gZipBlocksMap.BlockSize;
 
-            _lengthOfUnzipped = 0;
+            _lengthOfUnzipped = gZipBlocksMap.UnzippedLength;
 
-            var buffer = new byte[BlockSize];
-            var lengthRead = 0;
-            var blocksMap = new List<long>() { 0 };
+            _blocksMap = gZipBlocksMap.BlocksMap;
 
-            while ((lengthRead = this.Read(buffer)) > 0)
-            {
-                blocksMap.Add(this.BaseStream.Position);
-                _lengthOfUnzipped += lengthRead;
-            }
-
-            this.BaseStream.Seek(0, SeekOrigin.Begin);
-
-            _blocksMap = blocksMap.ToArray();
-
-            BlocksCount = (int) (_lengthOfUnzipped / BlockSize + 1);
+            BlocksCount = (int)(_lengthOfUnzipped / BlockSize + 1);
 
             // This field's value will not overflow int as blocksize is int.
             _bytesForLastBlockCount = (int)(_lengthOfUnzipped % BlockSize);
