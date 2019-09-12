@@ -41,9 +41,8 @@ namespace TestTask_GZipArchiver.Core.Models
             _isInitialized = true;
         }
 
-        // According the specification format is
-        // "<appname.exe> compress|decompress <input file path> [output file path]"
-        public static void Bind(string[] args)
+        // According the specification format is "<appname.exe> compress|decompress <input file path> [output file path]"
+        public static void Set(string[] args)
         {
             // Adjustment args to lowercase
             for (int i = 0; i < args.Length; i++)

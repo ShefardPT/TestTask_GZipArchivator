@@ -14,7 +14,7 @@ namespace TestTask_GZipArchiver
         {
             try
             {
-                RunningArguments.Bind(args);
+                RunningArguments.Set(args);
             }
             catch (ArgumentException ex)
             {
