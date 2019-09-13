@@ -4,6 +4,7 @@ using System.Text;
 
 namespace TestTask_GZipArchiver.Core.Models
 {
+    // Class stores application settings
     public class ApplicationSettings
     {
         private static ApplicationSettings _instance = new ApplicationSettings();

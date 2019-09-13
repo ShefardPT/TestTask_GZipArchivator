@@ -7,6 +7,7 @@ using TestTask_GZipArchiver.Core.Models.Interfaces;
 
 namespace TestTask_GZipArchiver.Core.Models
 {
+    // IBlockStream implementation above GZipStream class
     public class GZipBlockStream : GZipStream, IBlockStream
     {
         public GZipBlockStream(Stream stream, CompressionLevel compressionLevel, GZipBlocksMap gZipBlocksMap)

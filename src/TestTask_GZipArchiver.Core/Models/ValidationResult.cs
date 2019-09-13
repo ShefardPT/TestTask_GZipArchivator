@@ -4,6 +4,7 @@ using System.Text;
 
 namespace TestTask_GZipArchiver.Core.Models
 {
+    // Utility class for ValidationService
     public class ValidationResult
     {
         public ValidationResult()

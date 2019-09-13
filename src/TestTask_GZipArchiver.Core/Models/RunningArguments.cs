@@ -8,6 +8,7 @@ using TestTask_GZipArchiver.Core.Services.Interfaces;
 
 namespace TestTask_GZipArchiver.Core.Models
 {
+    // Class stores runtime arguments
     public class RunningArguments
     {
         private static RunningArguments _instance = new RunningArguments();
@@ -17,30 +18,8 @@ namespace TestTask_GZipArchiver.Core.Models
         public string InputPath { get; private set; }
         public string OutputPath { get; private set; }
         public bool DoShowHelp { get; private set; }
-
-        private RunningArguments()
-        {
-            Init();
-        }
-
-        public static RunningArguments Current
-        {
-            get
-            {
-                if (!_isInitialized)
-                {
-                    _instance = new RunningArguments();
-                }
-
-                return _instance;
-            }
-        }
-
-        private static void Init()
-        {
-            _isInitialized = true;
-        }
-
+        
+        // Sets runtime arguments from string[]
         // According the specification format is "<appname.exe> compress|decompress <input file path> [output file path]"
         public static void Set(string[] args)
         {
@@ -113,6 +92,30 @@ namespace TestTask_GZipArchiver.Core.Models
                 InputPath = inputFile.FullName,
                 OutputPath = outputFile.FullName
             };
+        }
+
+        private RunningArguments()
+        {
+            Init();
+        }
+        
+        public static RunningArguments Current
+        {
+            get
+            {
+                if (!_isInitialized)
+                {
+                    _instance = new RunningArguments();
+                }
+
+                return _instance;
+            }
+        }
+
+        // Sets initialization state to "initialized"
+        private static void Init()
+        {
+            _isInitialized = true;
         }
     }
 }

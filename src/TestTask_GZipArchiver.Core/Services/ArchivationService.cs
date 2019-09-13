@@ -9,8 +9,6 @@ using TestTask_GZipArchiver.Core.Services.Interfaces;
 
 namespace TestTask_GZipArchiver.Core.Services
 {
-    // Methods CompressFile(string, string) and DecompressFile(string, string) are almost similar
-    // excepting one line, but I'm not sure abut should them be united somehow
     public class ArchivationService : IArchivationService
     {
         private ApplicationSettings _settings;
@@ -26,7 +24,7 @@ namespace TestTask_GZipArchiver.Core.Services
             _validationSrv = new ValidationService();
         }
 
-        // Compresses any non-gzip file to gzip archive
+        // Compresses any non-gzip file to GZip archive
         public void CompressFile(string input, string output)
         {
             var inputFileCheck = _validationSrv.IsFileGZipArchive(input);
@@ -73,6 +71,7 @@ namespace TestTask_GZipArchiver.Core.Services
             inputFileStream.Dispose();
         }
 
+        // Decompress GZip file
         public void DecompressFile(string input, string output)
         {
             var inputFileCheck = _validationSrv.IsFileGZipArchive(input);
