@@ -24,6 +24,11 @@ namespace TestTask_GZipArchiver.Core.Services
             _validationSrv = new ValidationService();
         }
 
+        ~ArchivationService()
+        {
+            _semaphore.Dispose();
+        }
+
         // Compresses any non-gzip file to GZip archive
         public void CompressFile(string input, string output)
         {
@@ -73,6 +78,8 @@ namespace TestTask_GZipArchiver.Core.Services
 
             Console.Write("\n");
 
+            countdownEvent.Dispose();
+            queueSynchronizer.Dispose();
             gzipStream.Dispose();
             outputFileStream.Dispose();
             inputFileStream.Dispose();
@@ -95,7 +102,6 @@ namespace TestTask_GZipArchiver.Core.Services
 
             var inputFileStream = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read);
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-
             var gzipStream = new GZipBlockStream(inputFileStream, CompressionMode.Decompress, blocksMap);
 
             int blocksCount = gzipStream.BlocksCount;
@@ -134,6 +140,8 @@ namespace TestTask_GZipArchiver.Core.Services
 
             Console.Write("\n");
 
+            countdownEvent.Dispose();
+            queueSynchronizer.Dispose();
             gzipStream.Dispose();
             outputFileStream.Dispose();
             inputFileStream.Dispose();
