@@ -80,13 +80,20 @@ namespace TestTask_GZipArchiver.Core.Services
                 throw new ArgumentException("The specified input file is not GZip archive.");
             }
 
+            Console.WriteLine("Getting info about the input archive.");
+
             var blocksMap = new GZipBlocksMap(input, _settings.BlockSize);
+
+            Console.WriteLine($"Info has been read. Size of unzipped file is {blocksMap.UnzippedLength}.");
+
             var inputFileStream = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read);
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
 
             var gzipStream = new GZipBlockStream(inputFileStream, CompressionMode.Decompress, blocksMap);
 
             int blocksCount = gzipStream.BlocksCount;
+
+            Console.WriteLine($"{blocksCount} are awaiting to be proceeded.");
 
             var queueSynchronizer = new QueueSynchronizer();
             var countdownEvent = new CountdownEvent(blocksCount);
@@ -108,12 +115,16 @@ namespace TestTask_GZipArchiver.Core.Services
                     queueSynchronizer.LeaveQueue();
                     _semaphore.Release();
                     countdownEvent.Signal();
+
+                    Console.Write($"\r {blockNumber} of {blocksCount} has been proceeded.");
                 });
 
                 thread.Start();
             }
 
             countdownEvent.Wait();
+
+            Console.Write("\n");
 
             gzipStream.Dispose();
             outputFileStream.Dispose();

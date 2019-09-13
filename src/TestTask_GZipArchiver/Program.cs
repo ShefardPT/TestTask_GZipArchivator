@@ -12,6 +12,8 @@ namespace TestTask_GZipArchiver
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Program has been started.");
+
             try
             {
                 RunningArguments.Set(args);
@@ -21,6 +23,8 @@ namespace TestTask_GZipArchiver
                 Console.WriteLine(ex.Message);
                 return;
             }
+
+            Console.WriteLine("Arguments has been set.");
 
             if (RunningArguments.Current.DoShowHelp)
             {
@@ -56,6 +60,8 @@ namespace TestTask_GZipArchiver
                                       "https://github.com/ShefardPT/TestTask_GZipArchiver/issues");
                     return;
                 }
+
+                Console.WriteLine("Done!");
             }
         }
     }
