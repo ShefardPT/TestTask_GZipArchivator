@@ -4,7 +4,7 @@ using System.Threading;
 namespace TestTask_GZipArchiver.Core.Models
 {
     // Forses threads do their job (or part of it) one by one strictly.
-    public class QueueSynchronizer
+    public class QueueSynchronizer : IDisposable
     {
         private AutoResetEvent _lock;
         private int _awaitedPos;
@@ -38,6 +38,11 @@ namespace TestTask_GZipArchiver.Core.Models
             _awaitedPos++;
 
             _lock.Set();
+        }
+
+        public void Dispose()
+        {
+            _lock.Dispose();
         }
     }
 }
