@@ -62,6 +62,8 @@ namespace TestTask_GZipArchiver
                 }
 
                 Console.WriteLine("Done!");
+                Console.WriteLine("Press ENTER to finish.");
+                Console.ReadLine();
             }
         }
     }

@@ -39,6 +39,8 @@ namespace TestTask_GZipArchiver.Core.Services
 
             int blocksCount = inputFileStream.BlocksCount;
 
+            Console.WriteLine($"{blocksCount} blocks are awaiting to be proceeded.");
+
             var queueSynchronizer = new QueueSynchronizer();
             var countdownEvent = new CountdownEvent(blocksCount);
 
@@ -58,6 +60,9 @@ namespace TestTask_GZipArchiver.Core.Services
 
                     queueSynchronizer.LeaveQueue();
                     _semaphore.Release();
+
+                    Console.Write($"\r{blockNumber + 1} of {blocksCount} blocks has been proceeded.");
+
                     countdownEvent.Signal();
                 });
 
@@ -65,6 +70,8 @@ namespace TestTask_GZipArchiver.Core.Services
             }
 
             countdownEvent.Wait();
+
+            Console.Write("\n");
 
             gzipStream.Dispose();
             outputFileStream.Dispose();
@@ -93,7 +100,7 @@ namespace TestTask_GZipArchiver.Core.Services
 
             int blocksCount = gzipStream.BlocksCount;
 
-            Console.WriteLine($"{blocksCount} are awaiting to be proceeded.");
+            Console.WriteLine($"{blocksCount} blocks are awaiting to be proceeded.");
 
             var queueSynchronizer = new QueueSynchronizer();
             var countdownEvent = new CountdownEvent(blocksCount);
@@ -114,9 +121,10 @@ namespace TestTask_GZipArchiver.Core.Services
 
                     queueSynchronizer.LeaveQueue();
                     _semaphore.Release();
-                    countdownEvent.Signal();
 
-                    Console.Write($"\r {blockNumber} of {blocksCount} has been proceeded.");
+                    Console.Write($"\r{blockNumber + 1} of {blocksCount} blocks has been proceeded.");
+
+                    countdownEvent.Signal();
                 });
 
                 thread.Start();
