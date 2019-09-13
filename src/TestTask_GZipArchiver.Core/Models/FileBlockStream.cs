@@ -102,7 +102,7 @@ namespace TestTask_GZipArchiver.Core.Models
 
             byte[] result = new byte[blockSize];
 
-            var pos = BlockSize * blockNumber;
+            var pos = (long)BlockSize * blockNumber;
 
             lock (_locker)
             {

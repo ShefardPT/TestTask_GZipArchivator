@@ -24,7 +24,7 @@ namespace TestTask_GZipArchiver
                 return;
             }
 
-            Console.WriteLine("Arguments has been set.");
+            Console.WriteLine("Arguments have been set.");
 
             if (RunningArguments.Current.DoShowHelp)
             {
@@ -50,6 +50,13 @@ namespace TestTask_GZipArchiver
                 catch(ArgumentException ex)
                 {
                     Console.WriteLine(ex.Message);
+
+                    var outputFile = new FileInfo(RunningArguments.Current.OutputPath);
+                    if (outputFile.Exists)
+                    {
+                        outputFile.Delete();
+                    }
+
                     return;
                 }
                 catch (Exception ex)
@@ -58,6 +65,13 @@ namespace TestTask_GZipArchiver
                     Console.WriteLine(ex.StackTrace);
                     Console.WriteLine("The unhandled exception has been thrown. Please create bug ticket on " +
                                       "https://github.com/ShefardPT/TestTask_GZipArchiver/issues");
+
+                    var outputFile = new FileInfo(RunningArguments.Current.OutputPath);
+                    if (outputFile.Exists)
+                    {
+                        outputFile.Delete();
+                    }
+
                     return;
                 }
 
