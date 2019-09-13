@@ -7,6 +7,7 @@ using TestTask_GZipArchiver.Core.Models.Interfaces;
 
 namespace TestTask_GZipArchiver.Core.Models
 {
+    // IBlockStream implementation above FileStream class
     public class FileBlockStream : FileStream, IBlockStream
     {
         public FileBlockStream(SafeFileHandle handle, FileAccess access, int blockSize) 
@@ -101,7 +102,7 @@ namespace TestTask_GZipArchiver.Core.Models
 
             byte[] result = new byte[blockSize];
 
-            var pos = BlockSize * blockNumber;
+            var pos = (long)BlockSize * blockNumber;
 
             lock (_locker)
             {
@@ -115,6 +116,8 @@ namespace TestTask_GZipArchiver.Core.Models
         private void InitBlockStream(int blockSize)
         {
             BlockSize = blockSize;
+            // BlockSize of 1Mb size will be sufficient fo files of 2^22 GB
+            // So casting exception is unlikely
             BlocksCount = (int) (this.Length / BlockSize + 1);
 
             // This field's value will not overflow int as blocksize is int.

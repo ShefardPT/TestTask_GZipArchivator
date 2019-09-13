@@ -7,6 +7,7 @@ using System.Text;
 
 namespace TestTask_GZipArchiver.Core.Models
 {
+    // Utility class for GZipBlockStream
     public class GZipBlocksMap
     {
         public int BlockSize { get; }

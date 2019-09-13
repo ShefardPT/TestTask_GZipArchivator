@@ -12,6 +12,8 @@ namespace TestTask_GZipArchiver
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Program has been started.");
+
             try
             {
                 RunningArguments.Set(args);
@@ -21,6 +23,8 @@ namespace TestTask_GZipArchiver
                 Console.WriteLine(ex.Message);
                 return;
             }
+
+            Console.WriteLine("Arguments have been set.");
 
             if (RunningArguments.Current.DoShowHelp)
             {
@@ -43,10 +47,37 @@ namespace TestTask_GZipArchiver
                 {
                     archiverAction.Invoke(RunningArguments.Current.InputPath, RunningArguments.Current.OutputPath);
                 }
+                catch(ArgumentException ex)
+                {
+                    Console.WriteLine(ex.Message);
+
+                    var outputFile = new FileInfo(RunningArguments.Current.OutputPath);
+                    if (outputFile.Exists)
+                    {
+                        outputFile.Delete();
+                    }
+
+                    return;
+                }
                 catch (Exception ex)
                 {
-                    // TODO handle exceptions 
+                    Console.WriteLine(ex.Message);
+                    Console.WriteLine(ex.StackTrace);
+                    Console.WriteLine("The unhandled exception has been thrown. Please create bug ticket on " +
+                                      "https://github.com/ShefardPT/TestTask_GZipArchiver/issues");
+
+                    var outputFile = new FileInfo(RunningArguments.Current.OutputPath);
+                    if (outputFile.Exists)
+                    {
+                        outputFile.Delete();
+                    }
+
+                    return;
                 }
+
+                Console.WriteLine("Done!");
+                Console.WriteLine("Press ENTER to finish.");
+                Console.ReadLine();
             }
         }
     }

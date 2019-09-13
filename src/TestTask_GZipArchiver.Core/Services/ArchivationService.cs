@@ -9,28 +9,37 @@ using TestTask_GZipArchiver.Core.Services.Interfaces;
 
 namespace TestTask_GZipArchiver.Core.Services
 {
-    // Methods CompressFile(string, string) and DecompressFile(string, string) are almost similar
-    // excepting one line, but I'm not sure abut should them be united somehow
     public class ArchivationService : IArchivationService
     {
         private ApplicationSettings _settings;
         private string _instanceId;
         private Semaphore _semaphore;
+        private ValidationService _validationSrv;
 
         public ArchivationService()
         {
             _settings = ApplicationSettings.Current;
             _instanceId = Guid.NewGuid().ToString("N");
             _semaphore = new Semaphore(_settings.ThreadsCount, _settings.ThreadsCount, _instanceId);
+            _validationSrv = new ValidationService();
         }
 
+        // Compresses any non-gzip file to GZip archive
         public void CompressFile(string input, string output)
         {
+            var inputFileCheck = _validationSrv.IsFileGZipArchive(input);
+            if (inputFileCheck.IsValid)
+            {
+                throw new ArgumentException("The specified input file is GZip archive already.");
+            }
+
             var inputFileStream = new FileBlockStream(input, FileMode.Open, FileAccess.Read, FileShare.None, _settings.BlockSize);
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
             var gzipStream = new GZipStream(outputFileStream, CompressionMode.Compress);
 
             int blocksCount = inputFileStream.BlocksCount;
+
+            Console.WriteLine($"{blocksCount} blocks are awaiting to be proceeded.");
 
             var queueSynchronizer = new QueueSynchronizer();
             var countdownEvent = new CountdownEvent(blocksCount);
@@ -51,6 +60,9 @@ namespace TestTask_GZipArchiver.Core.Services
 
                     queueSynchronizer.LeaveQueue();
                     _semaphore.Release();
+
+                    Console.Write($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
+
                     countdownEvent.Signal();
                 });
 
@@ -59,14 +71,27 @@ namespace TestTask_GZipArchiver.Core.Services
 
             countdownEvent.Wait();
 
+            Console.Write("\n");
+
             gzipStream.Dispose();
             outputFileStream.Dispose();
             inputFileStream.Dispose();
         }
 
+        // Decompress GZip file
         public void DecompressFile(string input, string output)
         {
+            var inputFileCheck = _validationSrv.IsFileGZipArchive(input);
+            if (!inputFileCheck.IsValid)
+            {
+                throw new ArgumentException("The specified input file is not GZip archive.");
+            }
+
+            Console.WriteLine("Getting info about the input archive.");
+
             var blocksMap = new GZipBlocksMap(input, _settings.BlockSize);
+
+            Console.WriteLine($"Info has been read. Size of unzipped file is {blocksMap.UnzippedLength}.");
 
             var inputFileStream = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read);
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
@@ -74,6 +99,8 @@ namespace TestTask_GZipArchiver.Core.Services
             var gzipStream = new GZipBlockStream(inputFileStream, CompressionMode.Decompress, blocksMap);
 
             int blocksCount = gzipStream.BlocksCount;
+
+            Console.WriteLine($"{blocksCount} blocks are awaiting to be proceeded.");
 
             var queueSynchronizer = new QueueSynchronizer();
             var countdownEvent = new CountdownEvent(blocksCount);
@@ -94,6 +121,9 @@ namespace TestTask_GZipArchiver.Core.Services
 
                     queueSynchronizer.LeaveQueue();
                     _semaphore.Release();
+
+                    Console.Write($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
+
                     countdownEvent.Signal();
                 });
 
@@ -101,6 +131,8 @@ namespace TestTask_GZipArchiver.Core.Services
             }
 
             countdownEvent.Wait();
+
+            Console.Write("\n");
 
             gzipStream.Dispose();
             outputFileStream.Dispose();

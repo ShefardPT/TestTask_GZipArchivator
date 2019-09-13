@@ -4,6 +4,7 @@ using System.Text;
 
 namespace TestTask_GZipArchiver.Core.Models
 {
+    // Class stores application settings
     public class ApplicationSettings
     {
         private static ApplicationSettings _instance = new ApplicationSettings();
@@ -15,7 +16,7 @@ namespace TestTask_GZipArchiver.Core.Models
 
         private ApplicationSettings()
         {
-            BlockSize = 1 * 1024 * 1024 * 4;
+            BlockSize = 1 * 1024 * 1024 * 64;
             ThreadsCount = Environment.ProcessorCount;
         }
 

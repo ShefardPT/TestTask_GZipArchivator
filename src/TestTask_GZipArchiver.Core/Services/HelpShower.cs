@@ -5,6 +5,7 @@ using TestTask_GZipArchiver.Core.Services.Interfaces;
 
 namespace TestTask_GZipArchiver.Core.Services
 {
+    // Shows help
     public class HelpShower : IHelpShower
     {
         public void ShowHelp()
