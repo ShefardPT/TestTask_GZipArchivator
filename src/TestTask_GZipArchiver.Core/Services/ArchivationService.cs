@@ -57,17 +57,17 @@ namespace TestTask_GZipArchiver.Core.Services
 
                 var thread = new Thread(() =>
                 {
-                    Console.WriteLine($"Block {blockNumber} has started to proceed.");
+                    //Console.WriteLine($"Block {blockNumber} has started to proceed.");
 
                     var dataBlock = inputFileStream.GetBlockBytes(blockNumber);
 
-                    Console.WriteLine($"Block {blockNumber} has got data.");
+                    //Console.WriteLine($"Block {blockNumber} has got data.");
 
                     queueSynchronizer.GetInQueue(blockNumber);
 
-                    Console.WriteLine($"Block {blockNumber} gonna write data.");
+                    //Console.WriteLine($"Block {blockNumber} gonna write data.");
                     gzipStream.Write(dataBlock);
-                    Console.WriteLine($"Block {blockNumber} has written data.");
+                    //Console.WriteLine($"Block {blockNumber} has written data.");
 
                     queueSynchronizer.LeaveQueue(blockNumber);
                     _semaphore.Release();
