@@ -52,21 +52,27 @@ namespace TestTask_GZipArchiver.Core.Services
             for (int i = 0; i < blocksCount; i++)
             {
                 var blockNumber = i;
-
+                
                 _semaphore.WaitOne();
 
                 var thread = new Thread(() =>
                 {
+                    Console.WriteLine($"Block {blockNumber} has started to proceed.");
+
                     var dataBlock = inputFileStream.GetBlockBytes(blockNumber);
+
+                    Console.WriteLine($"Block {blockNumber} has got data.");
 
                     queueSynchronizer.GetInQueue(blockNumber);
 
+                    Console.WriteLine($"Block {blockNumber} gonna write data.");
                     gzipStream.Write(dataBlock);
+                    Console.WriteLine($"Block {blockNumber} has written data.");
 
                     queueSynchronizer.LeaveQueue();
                     _semaphore.Release();
 
-                    Console.Write($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
+                    Console.WriteLine($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
 
                     countdownEvent.Signal();
                 });

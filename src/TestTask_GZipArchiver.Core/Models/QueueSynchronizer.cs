@@ -6,34 +6,36 @@ namespace TestTask_GZipArchiver.Core.Models
     // Forses threads do their job (or part of it) one by one strictly.
     public class QueueSynchronizer : IDisposable
     {
-        private AutoResetEvent _lock;
+        private ManualResetEvent _lock;
         private int _awaitedPos;
 
         public QueueSynchronizer()
         {
-            _lock = new AutoResetEvent(true);
+            _lock = new ManualResetEvent(true);
             _awaitedPos = 0;
         }
 
         public void GetInQueue(int pos)
         {
-            //Console.WriteLine($"Block {pos} has got in queue.");
+            Console.WriteLine($"Block {pos} has got in queue.");
 
             while (pos != _awaitedPos)
             {
-                //Console.WriteLine($"Block {pos} has tried to move further.");
+                Console.WriteLine($"Block {pos} has tried to move further.");
                 
                 _lock.WaitOne();
+
+                Console.WriteLine($"Block {pos} has been passed.");
             }
 
-            _lock.Reset();
+            Console.WriteLine($"Block {pos} has moved further.");
 
-            //Console.WriteLine($"Block {pos} has moved further.");
+            _lock.Reset();
         }
 
         public void LeaveQueue()
         {
-            //Console.WriteLine($"Block {_awaitedPos} has left queue.");
+            Console.WriteLine($"Block {_awaitedPos} has left queue.");
 
             _awaitedPos++;
 
