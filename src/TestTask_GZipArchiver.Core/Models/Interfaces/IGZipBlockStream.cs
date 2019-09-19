@@ -4,9 +4,8 @@ using System.Text;
 
 namespace TestTask_GZipArchiver.Core.Models.Interfaces
 {
-    public interface IBlockStream
+    public interface IGZipBlockStream : IBlockStream
     {
-        int BlockSize { get; }
-        int BlocksCount { get; }
+        DataBlock GetBlockBytes();
     }
 }
