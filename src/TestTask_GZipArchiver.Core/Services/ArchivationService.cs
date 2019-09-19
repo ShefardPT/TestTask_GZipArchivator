@@ -69,7 +69,7 @@ namespace TestTask_GZipArchiver.Core.Services
                     gzipStream.Write(dataBlock);
                     Console.WriteLine($"Block {blockNumber} has written data.");
 
-                    queueSynchronizer.LeaveQueue();
+                    queueSynchronizer.LeaveQueue(blockNumber);
                     _semaphore.Release();
 
                     Console.WriteLine($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
@@ -131,7 +131,7 @@ namespace TestTask_GZipArchiver.Core.Services
 
                     outputFileStream.Write(dataBlock);
 
-                    queueSynchronizer.LeaveQueue();
+                    queueSynchronizer.LeaveQueue(blockNumber);
                     _semaphore.Release();
 
                     Console.Write($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
