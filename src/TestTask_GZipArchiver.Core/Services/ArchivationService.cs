@@ -52,21 +52,27 @@ namespace TestTask_GZipArchiver.Core.Services
             for (int i = 0; i < blocksCount; i++)
             {
                 var blockNumber = i;
-
+                
                 _semaphore.WaitOne();
 
                 var thread = new Thread(() =>
                 {
+                    //Console.WriteLine($"Block {blockNumber} has started to proceed.");
+
                     var dataBlock = inputFileStream.GetBlockBytes(blockNumber);
+
+                    //Console.WriteLine($"Block {blockNumber} has got data.");
 
                     queueSynchronizer.GetInQueue(blockNumber);
 
+                    //Console.WriteLine($"Block {blockNumber} gonna write data.");
                     gzipStream.Write(dataBlock);
+                    //Console.WriteLine($"Block {blockNumber} has written data.");
 
-                    queueSynchronizer.LeaveQueue();
+                    queueSynchronizer.LeaveQueue(blockNumber);
                     _semaphore.Release();
 
-                    Console.Write($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
+                    Console.WriteLine($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
 
                     countdownEvent.Signal();
                 });
@@ -98,7 +104,7 @@ namespace TestTask_GZipArchiver.Core.Services
 
             var blocksMap = new GZipBlocksMap(input, _settings.BlockSize);
 
-            Console.WriteLine($"Info has been read. Size of unzipped file is {blocksMap.UnzippedLength}.");
+            Console.WriteLine($"Info has been read. Size of unzipped file is {blocksMap.UnzippedLength} bytes.");
 
             var inputFileStream = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read);
             var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
@@ -113,22 +119,20 @@ namespace TestTask_GZipArchiver.Core.Services
 
             for (int i = 0; i < blocksCount; i++)
             {
-                var blockNumber = i;
-
                 _semaphore.WaitOne();
 
                 var thread = new Thread(() =>
                 {
-                    var dataBlock = gzipStream.GetBlockBytes(blockNumber);
+                    var dataBlock = gzipStream.GetBlockBytes();
 
-                    queueSynchronizer.GetInQueue(blockNumber);
+                    queueSynchronizer.GetInQueue(dataBlock.BlockNumber);
 
-                    outputFileStream.Write(dataBlock);
+                    outputFileStream.Write(dataBlock.Data);
 
-                    queueSynchronizer.LeaveQueue();
+                    queueSynchronizer.LeaveQueue(dataBlock.BlockNumber);
                     _semaphore.Release();
 
-                    Console.Write($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
+                    Console.Write($"\r{dataBlock.BlockNumber + 1} of {blocksCount} blocks have been proceeded.");
 
                     countdownEvent.Signal();
                 });

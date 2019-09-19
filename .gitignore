@@ -260,3 +260,4 @@ paket-files/
 __pycache__/
 *.pyc
 /src/TestTask_GZipArchiver/Properties/launchSettings.json
+/src/TestTask_GZipArchiver/Properties/PublishProfiles/FolderProfile.pubxml

@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace TestTask_GZipArchiver.Core.Models
@@ -6,38 +8,51 @@ namespace TestTask_GZipArchiver.Core.Models
     // Forses threads do their job (or part of it) one by one strictly.
     public class QueueSynchronizer : IDisposable
     {
-        private AutoResetEvent _lock;
+        private ManualResetEvent _lock;
         private int _awaitedPos;
-
+        private ConcurrentDictionary<int, ManualResetEvent> _queueDict;
+        
         public QueueSynchronizer()
         {
-            _lock = new AutoResetEvent(true);
+            _lock = new ManualResetEvent(false);
             _awaitedPos = 0;
+            _queueDict = new ConcurrentDictionary<int, ManualResetEvent>();
         }
 
         public void GetInQueue(int pos)
         {
             //Console.WriteLine($"Block {pos} has got in queue.");
 
+            var locker = _queueDict.GetOrAdd(pos,new ManualResetEvent(false));
+
             while (pos != _awaitedPos)
             {
-                //Console.WriteLine($"Block {pos} has tried to move further.");
-                
-                _lock.WaitOne();
+                locker.WaitOne();
             }
-
-            _lock.Reset();
-
-            //Console.WriteLine($"Block {pos} has moved further.");
         }
 
-        public void LeaveQueue()
+        public void LeaveQueue(int pos)
         {
-            //Console.WriteLine($"Block {_awaitedPos} has left queue.");
+            //Console.WriteLine($"Block {pos} is trying to leave the queue.");
+            
+            if (_queueDict.TryGetValue(pos, out var locker))
+            {
+                if (_queueDict.TryRemove(pos, out locker))
+                {
+                    locker.Dispose();
+                }
+            }
+            
+            //Console.WriteLine($"Block {pos} has left queue.");
 
             _awaitedPos++;
 
-            _lock.Set();
+            if (_queueDict.TryGetValue(_awaitedPos, out var nextLocker))
+            {
+                nextLocker.Set();
+            }
+            
+            //Console.WriteLine($"Block {_awaitedPos} has been passed.");
         }
 
         public void Dispose()

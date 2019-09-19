@@ -18,7 +18,7 @@ namespace TestTask_GZipArchiver.Core.Models
         {
             BlockSize = blockSize;
 
-            var blocksMap = new List<long>() { 0 };
+            var blocksMap = new List<long>();
 
             using (var fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
             {
@@ -27,15 +27,22 @@ namespace TestTask_GZipArchiver.Core.Models
                     var buffer = new byte[blockSize];
                     long read;
 
-                    while ((read = gzips.Read(buffer)) > 0)
+                    do
                     {
-                        UnzippedLength += read;
                         blocksMap.Add(gzips.BaseStream.Position);
+
+                        read = gzips.Read(buffer);
+                        UnzippedLength += read;
                     }
+                    while (read != 0);
                 }
             }
 
-            BlocksMap = blocksMap.ToArray();
+            BlocksMap = blocksMap
+                .OrderBy(x => x)
+                // The last item is the end of file, it is use less
+                .SkipLast(1)
+                .ToArray();
         }
     }
 }

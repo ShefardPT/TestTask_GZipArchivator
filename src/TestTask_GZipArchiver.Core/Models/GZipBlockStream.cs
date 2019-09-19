@@ -4,11 +4,12 @@ using System.IO;
 using System.IO.Compression;
 using System.Text;
 using TestTask_GZipArchiver.Core.Models.Interfaces;
+using System.Linq;
 
 namespace TestTask_GZipArchiver.Core.Models
 {
     // IBlockStream implementation above GZipStream class
-    public class GZipBlockStream : GZipStream, IBlockStream
+    public class GZipBlockStream : GZipStream, IGZipBlockStream
     {
         public GZipBlockStream(Stream stream, CompressionLevel compressionLevel, GZipBlocksMap gZipBlocksMap)
             : base(stream, compressionLevel)
@@ -37,25 +38,26 @@ namespace TestTask_GZipArchiver.Core.Models
         private int _bytesForLastBlockCount;
         private object _locker = new object();
         private long _lengthOfUnzipped;
-        private long[] _blocksMap;
+        private Dictionary<long, int> _blocksMap;
 
         public int BlockSize { get; private set; }
         public int BlocksCount { get; private set; }
 
-        public byte[] GetBlockBytes(int blockNumber)
+        public DataBlock GetBlockBytes()
         {
-            var blockSize = BlocksCount == blockNumber + 1
-                ? _bytesForLastBlockCount
-                : BlockSize;
-
-            byte[] result = new byte[blockSize];
-
-            var pos = _blocksMap[blockNumber];
+            DataBlock result;
 
             lock (_locker)
             {
-                this.BaseStream.Seek(pos, SeekOrigin.Begin);
-                this.Read(result);
+                var blockNumber = _blocksMap[this.BaseStream.Position];
+
+                var blockSize = blockNumber == BlocksCount - 1
+                    ? _bytesForLastBlockCount
+                    : BlockSize;
+
+                result = new DataBlock(new byte[blockSize], blockNumber);
+
+                this.Read(result.Data);
             }
 
             return result;
@@ -65,11 +67,16 @@ namespace TestTask_GZipArchiver.Core.Models
         {
             BlockSize = gZipBlocksMap.BlockSize;
             _lengthOfUnzipped = gZipBlocksMap.UnzippedLength;
-            _blocksMap = gZipBlocksMap.BlocksMap;
+            _blocksMap = new Dictionary<long, int>();
+
+            for (int i = 0; i < gZipBlocksMap.BlocksMap.Length; i++)
+            {
+                _blocksMap.Add(gZipBlocksMap.BlocksMap[i], i);
+            }
 
             // BlockSize of 1Mb size will be sufficient fo files of 2^22 GB
             // So casting exception is unlikely
-            BlocksCount = (int)(_lengthOfUnzipped / BlockSize + 1);
+            BlocksCount = gZipBlocksMap.BlocksMap.Length;
 
             // This field's value will not overflow int as blocksize is int.
             _bytesForLastBlockCount = (int)(_lengthOfUnzipped % BlockSize);
