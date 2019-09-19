@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace TestTask_GZipArchiver.Core.Models
@@ -11,7 +12,7 @@ namespace TestTask_GZipArchiver.Core.Models
 
         public QueueSynchronizer()
         {
-            _lock = new ManualResetEvent(true);
+            _lock = new ManualResetEvent(false);
             _awaitedPos = 0;
         }
 
