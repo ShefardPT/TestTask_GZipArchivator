@@ -72,7 +72,7 @@ namespace TestTask_GZipArchiver.Core.Services
                     queueSynchronizer.LeaveQueue(blockNumber);
                     _semaphore.Release();
 
-                    Console.WriteLine($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
+                    Console.Write($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
 
                     countdownEvent.Signal();
                 });
