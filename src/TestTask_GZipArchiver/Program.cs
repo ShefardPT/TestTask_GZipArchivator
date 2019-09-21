@@ -33,7 +33,9 @@ namespace TestTask_GZipArchiver
             }
             else
             {
-                var archivationSrv = new MultiCoreArchivationService();
+                var archivationServiceProvider = new ArchivationServiceProvider();
+
+                var archivationSrv = archivationServiceProvider.GetArchivationService();
 
                 var actionDict = new Dictionary<CompressionMode, Action<string, string>>()
                 {
