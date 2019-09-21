@@ -9,7 +9,7 @@ using TestTask_GZipArchiver.Core.Services;
 namespace TestTask_GZipArchiver.Tests
 {
     [TestFixture]
-    public class ArchivationServiceTests
+    public class MultiCoreArchivationServiceTests
     {
         private MultiCoreArchivationService _sut;
 
@@ -17,6 +17,34 @@ namespace TestTask_GZipArchiver.Tests
         public void Init()
         {
             _sut = new MultiCoreArchivationService();
+        }
+
+        [Test]
+        public void Should_copy_file()
+        {
+            var inputFile = new FileInfo("..\\..\\..\\files\\file_to_compress.pdf");
+            var outputFile = new FileInfo("..\\..\\..\\files\\file_to_compress1.pdf");
+
+            using (var inputFS = inputFile.OpenRead())
+            {
+                using (var outputFS = outputFile.OpenWrite())
+                {
+                    var bytesCount = 1024;
+                    var data = new byte[bytesCount];
+
+                    while (inputFS.Read(data) > 0)
+                    {
+                        if (inputFS.Position > inputFS.Length - bytesCount)
+                        {
+
+                        }
+
+                        outputFS.Write(data);
+                    }
+                }
+            }
+
+            Assert.Pass();
         }
 
         [Test]

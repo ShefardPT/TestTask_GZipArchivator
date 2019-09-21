@@ -6,6 +6,6 @@ namespace TestTask_GZipArchiver.Core.Models.Interfaces
 {
     public interface IFileBlockStream : IBlockStream
     {
-        byte[] GetBlockBytes(int blockNumber);
+        byte[] GetBytesBlock(int blockNumber);
     }
 }

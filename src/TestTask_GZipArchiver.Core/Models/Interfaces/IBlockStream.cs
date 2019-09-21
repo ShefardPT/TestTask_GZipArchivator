@@ -8,5 +8,7 @@ namespace TestTask_GZipArchiver.Core.Models.Interfaces
     {
         int BlockSize { get; }
         int BlocksCount { get; }
+
+        byte[] GetBytesBlock();
     }
 }

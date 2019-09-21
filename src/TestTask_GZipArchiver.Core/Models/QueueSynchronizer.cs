@@ -19,6 +19,11 @@ namespace TestTask_GZipArchiver.Core.Models
             _queueDict = new ConcurrentDictionary<int, ManualResetEvent>();
         }
 
+        ~QueueSynchronizer()
+        {
+            _lock.Dispose();
+        }
+
         public void GetInQueue(int pos)
         {
             //Console.WriteLine($"Block {pos} has got in queue.");

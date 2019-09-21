@@ -43,6 +43,21 @@ namespace TestTask_GZipArchiver.Core.Models
         public int BlockSize { get; private set; }
         public int BlocksCount { get; private set; }
 
+        public byte[] GetBytesBlock()
+        {
+            byte[] data = new byte[BlockSize];
+            var readCount = this.Read(data);
+
+            if (readCount < BlockSize)
+            {
+                var buffer = new byte[readCount];
+                Array.Copy(data, buffer, readCount);
+                data = buffer;
+            }
+
+            return data;
+        }
+
         public DataBlock GetBlockBytes()
         {
             DataBlock result;

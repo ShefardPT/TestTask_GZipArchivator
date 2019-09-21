@@ -38,57 +38,64 @@ namespace TestTask_GZipArchiver.Core.Services
                 throw new ArgumentException("The specified input file is GZip archive already.");
             }
 
-            var inputFileStream = new FileBlockStream(input, FileMode.Open, FileAccess.Read, FileShare.None, _settings.BlockSize);
-            var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            var gzipStream = new GZipStream(outputFileStream, CompressionMode.Compress);
-
-            int blocksCount = inputFileStream.BlocksCount;
-
-            Console.WriteLine($"{blocksCount} blocks are awaiting to be proceeded.");
-
-            var queueSynchronizer = new QueueSynchronizer();
-            var countdownEvent = new CountdownEvent(blocksCount);
-
-            for (int i = 0; i < blocksCount; i++)
+            using (var inputFS = new FileBlockStream(input, FileMode.Open, FileAccess.Read, FileShare.None, _settings.BlockSize))
             {
-                var blockNumber = i;
-                
-                _semaphore.WaitOne();
-
-                var thread = new Thread(() =>
+                using (var outputFS = new FileStream(output, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
                 {
-                    //Console.WriteLine($"Block {blockNumber} has started to proceed.");
+                    using (var gzips = new GZipStream(outputFS, CompressionMode.Compress))
+                    {
+                        byte[] readData = new byte[0];
+                        byte[] dataToWrite = new byte[0];
 
-                    var dataBlock = inputFileStream.GetBlockBytes(blockNumber);
+                        var writeLocker = new AutoResetEvent(true);
+                        var readLocker = new AutoResetEvent(true);
+                        var workIsDoneLocker = new ManualResetEvent(false);
 
-                    //Console.WriteLine($"Block {blockNumber} has got data.");
+                        var writingThread = new Thread(() =>
+                        {
+                            var isLastBlock = false;
 
-                    queueSynchronizer.GetInQueue(blockNumber);
+                            while (!isLastBlock)
+                            {
+                                writeLocker.WaitOne();
+                                dataToWrite = (byte[])readData.Clone();
+                                readLocker.Set();
+                                gzips.Write(dataToWrite);
 
-                    //Console.WriteLine($"Block {blockNumber} gonna write data.");
-                    gzipStream.Write(dataBlock);
-                    //Console.WriteLine($"Block {blockNumber} has written data.");
+                                if (dataToWrite.Length < inputFS.BlockSize)
+                                {
+                                    isLastBlock = true;
+                                }
+                            }
 
-                    queueSynchronizer.LeaveQueue(blockNumber);
-                    _semaphore.Release();
+                            workIsDoneLocker.Set();
+                        });
 
-                    Console.Write($"\r{blockNumber + 1} of {blocksCount} blocks have been proceeded.");
+                        while (true)
+                        {
+                            readLocker.WaitOne();
+                            readData = inputFS.GetBytesBlock();
 
-                    countdownEvent.Signal();
-                });
+                            if (readData.Length <= 0)
+                            {
+                                break;
+                            }
 
-                thread.Start();
+                            writeLocker.Set();
+
+                            if (!writingThread.IsAlive)
+                            {
+                                writingThread.Start();
+                            }
+                        };
+
+                        workIsDoneLocker.WaitOne();
+                        workIsDoneLocker.Dispose();
+                        readLocker.Dispose();
+                        writeLocker.Dispose();
+                    }
+                }
             }
-
-            countdownEvent.Wait();
-
-            Console.Write("\n");
-
-            countdownEvent.Dispose();
-            queueSynchronizer.Dispose();
-            gzipStream.Dispose();
-            outputFileStream.Dispose();
-            inputFileStream.Dispose();
         }
 
         // Decompress GZip file
