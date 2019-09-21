@@ -54,13 +54,17 @@ namespace TestTask_GZipArchiver.Core.Services
                         var writingThread = new Thread(() =>
                         {
                             var isLastBlock = false;
+                            long bytesProceeded = 0;
 
                             while (!isLastBlock)
                             {
                                 writeLocker.WaitOne();
                                 dataToWrite = (byte[])readData.Clone();
+                                bytesProceeded = inputFS.Position;
                                 readLocker.Set();
                                 gzips.Write(dataToWrite);
+
+                                Console.Write($"\r{inputFS.Length / bytesProceeded}% were compressed.");
 
                                 if (dataToWrite.Length < inputFS.BlockSize)
                                 {
@@ -68,6 +72,7 @@ namespace TestTask_GZipArchiver.Core.Services
                                 }
                             }
 
+                            Console.Write("\n");
                             workIsDoneLocker.Set();
                         });
 
@@ -88,7 +93,7 @@ namespace TestTask_GZipArchiver.Core.Services
                                 writingThread.Start();
                             }
                         };
-
+                        
                         workIsDoneLocker.WaitOne();
                         workIsDoneLocker.Dispose();
                         readLocker.Dispose();
