@@ -9,14 +9,14 @@ using TestTask_GZipArchiver.Core.Services.Interfaces;
 
 namespace TestTask_GZipArchiver.Core.Services
 {
-    public class ArchivationService : IArchivationService
+    public class MultiCoreArchivationService : IArchivationService
     {
         private ApplicationSettings _settings;
         private string _instanceId;
         private Semaphore _semaphore;
         private ValidationService _validationSrv;
 
-        public ArchivationService()
+        public MultiCoreArchivationService()
         {
             _settings = ApplicationSettings.Current;
             _instanceId = Guid.NewGuid().ToString("N");
@@ -24,7 +24,7 @@ namespace TestTask_GZipArchiver.Core.Services
             _validationSrv = new ValidationService();
         }
 
-        ~ArchivationService()
+        ~MultiCoreArchivationService()
         {
             _semaphore.Dispose();
         }

@@ -11,12 +11,12 @@ namespace TestTask_GZipArchiver.Tests
     [TestFixture]
     public class ArchivationServiceTests
     {
-        private ArchivationService _sut;
+        private MultiCoreArchivationService _sut;
 
         [SetUp]
         public void Init()
         {
-            _sut = new ArchivationService();
+            _sut = new MultiCoreArchivationService();
         }
 
         [Test]
