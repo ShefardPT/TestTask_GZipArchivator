@@ -2,7 +2,7 @@
 {
     public interface IArchivationService
     {
-        void CompressFile(string inputFile, string outputFile);
-        void DecompressFile(string inputFile, string outputFile);
+        void CompressFile(string input, string output);
+        void DecompressFile(string input, string output);
     }
 }
