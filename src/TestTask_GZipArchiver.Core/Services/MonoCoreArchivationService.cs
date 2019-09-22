@@ -50,7 +50,7 @@ namespace TestTask_GZipArchiver.Core.Services
             {
                 using (var outputFS = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None))
                 {
-                    using (var gzips = new GZipStream(inputFS, CompressionMode.Compress))
+                    using (var gzips = new GZipStream(inputFS, CompressionMode.Decompress))
                     {
                         gzips.CopyTo(outputFS);
                     }
