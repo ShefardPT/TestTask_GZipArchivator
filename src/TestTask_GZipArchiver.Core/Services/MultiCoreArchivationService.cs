@@ -39,7 +39,7 @@ namespace TestTask_GZipArchiver.Core.Services
                     {
                         var data = new Queue<DataBlock>();
 
-                        var writeLocker = new AutoResetEvent(true);
+                        var writeLocker = new AutoResetEvent(false);
                         var readLocker = new AutoResetEvent(true);
                         var workIsDoneLocker = new ManualResetEvent(false);
 
@@ -55,6 +55,7 @@ namespace TestTask_GZipArchiver.Core.Services
                                 }
 
                                 var dataToWrite = data.Dequeue();
+                                writeLocker.Reset();
                                 readLocker.Set();
 
                                 gzips.Write(dataToWrite.Data);
@@ -73,7 +74,7 @@ namespace TestTask_GZipArchiver.Core.Services
 
                         while (true)
                         {
-                            if (data.Count > 2)
+                            if (data.Count > 1)
                             {
                                 readLocker.WaitOne(); 
                             }
@@ -86,7 +87,7 @@ namespace TestTask_GZipArchiver.Core.Services
                             }
 
                             data.Enqueue(new DataBlock(readData,inputFS.Position));
-
+                            readLocker.Reset();
                             writeLocker.Set();
 
                             if (!writingThread.IsAlive)
@@ -121,7 +122,7 @@ namespace TestTask_GZipArchiver.Core.Services
                     {
                         var data = new Queue<DataBlock>();
 
-                        var writeLocker = new AutoResetEvent(true);
+                        var writeLocker = new AutoResetEvent(false);
                         var readLocker = new AutoResetEvent(true);
                         var workIsDoneLocker = new ManualResetEvent(false);
 
@@ -137,6 +138,7 @@ namespace TestTask_GZipArchiver.Core.Services
                                 }
 
                                 var dataToWrite = data.Dequeue();
+                                writeLocker.Reset();
                                 readLocker.Set();
 
                                 outputFS.Write(dataToWrite.Data);
@@ -155,7 +157,7 @@ namespace TestTask_GZipArchiver.Core.Services
 
                         while (true)
                         {
-                            if (data.Count > 2)
+                            if (data.Count > 1)
                             {
                                 readLocker.WaitOne(); 
                             }
@@ -168,6 +170,7 @@ namespace TestTask_GZipArchiver.Core.Services
                             }
 
                             data.Enqueue(new DataBlock(readData, inputFS.Position));
+                            readLocker.Reset();
                             writeLocker.Set();
 
                             if (!writingThread.IsAlive)
