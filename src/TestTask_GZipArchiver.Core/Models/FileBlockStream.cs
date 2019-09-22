@@ -10,7 +10,7 @@ namespace TestTask_GZipArchiver.Core.Models
     // IBlockStream implementation above FileStream class
     public class FileBlockStream : FileStream, IFileBlockStream
     {
-        public FileBlockStream(SafeFileHandle handle, FileAccess access, int blockSize) 
+        public FileBlockStream(SafeFileHandle handle, FileAccess access, int blockSize)
             : base(handle, access)
         {
             InitBlockStream(blockSize);
@@ -28,19 +28,19 @@ namespace TestTask_GZipArchiver.Core.Models
             InitBlockStream(blockSize);
         }
 
-        public FileBlockStream(IntPtr handle, FileAccess access, int blockSize) : 
+        public FileBlockStream(IntPtr handle, FileAccess access, int blockSize) :
             base(handle, access)
         {
             InitBlockStream(blockSize);
         }
 
-        public FileBlockStream(IntPtr handle, FileAccess access, bool ownsHandle, int blockSize) : 
+        public FileBlockStream(IntPtr handle, FileAccess access, bool ownsHandle, int blockSize) :
             base(handle, access, ownsHandle)
         {
             InitBlockStream(blockSize);
         }
 
-        public FileBlockStream(IntPtr handle, FileAccess access, bool ownsHandle, int bufferSize, int blockSize) : 
+        public FileBlockStream(IntPtr handle, FileAccess access, bool ownsHandle, int bufferSize, int blockSize) :
             base(handle, access, ownsHandle, bufferSize)
         {
             InitBlockStream(blockSize);
@@ -52,19 +52,19 @@ namespace TestTask_GZipArchiver.Core.Models
             InitBlockStream(blockSize);
         }
 
-        public FileBlockStream(string path, FileMode mode, int blockSize) : 
+        public FileBlockStream(string path, FileMode mode, int blockSize) :
             base(path, mode)
         {
             InitBlockStream(blockSize);
         }
 
-        public FileBlockStream(string path, FileMode mode, FileAccess access, int blockSize) : 
+        public FileBlockStream(string path, FileMode mode, FileAccess access, int blockSize) :
             base(path, mode, access)
         {
             InitBlockStream(blockSize);
         }
 
-        public FileBlockStream(string path, FileMode mode, FileAccess access, FileShare share, int blockSize) : 
+        public FileBlockStream(string path, FileMode mode, FileAccess access, FileShare share, int blockSize) :
             base(path, mode, access, share)
         {
             InitBlockStream(blockSize);
@@ -82,7 +82,7 @@ namespace TestTask_GZipArchiver.Core.Models
             InitBlockStream(blockSize);
         }
 
-        public FileBlockStream(string path, FileMode mode, FileAccess access, FileShare share, int bufferSize, FileOptions options, int blockSize) : 
+        public FileBlockStream(string path, FileMode mode, FileAccess access, FileShare share, int bufferSize, FileOptions options, int blockSize) :
             base(path, mode, access, share, bufferSize, options)
         {
             InitBlockStream(blockSize);
@@ -94,7 +94,22 @@ namespace TestTask_GZipArchiver.Core.Models
         public int BlockSize { get; private set; }
         public int BlocksCount { get; private set; }
 
-        public byte[] GetBlockBytes(int blockNumber)
+        public byte[] GetBytesBlock()
+        {
+            byte[] data = new byte[BlockSize];
+            var readCount = this.Read(data);
+
+            if (readCount < BlockSize)
+            {
+                var buffer = new byte[readCount];
+                Array.Copy(data, buffer, readCount);
+                data = buffer;
+            }
+
+            return data;
+        }
+
+        public byte[] GetBytesBlock(int blockNumber)
         {
             var blockSize = BlocksCount == blockNumber + 1
                 ? _bytesForLastBlockCount
@@ -118,10 +133,10 @@ namespace TestTask_GZipArchiver.Core.Models
             BlockSize = blockSize;
             // BlockSize of 1Mb size will be sufficient fo files of 2^22 GB
             // So casting exception is unlikely
-            BlocksCount = (int) (this.Length / BlockSize + 1);
+            BlocksCount = (int)(this.Length / BlockSize + 1);
 
             // This field's value will not overflow int as blocksize is int.
-            _bytesForLastBlockCount = (int) (this.Length % BlockSize);
+            _bytesForLastBlockCount = (int)(this.Length % BlockSize);
         }
     }
 }
