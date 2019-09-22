@@ -37,9 +37,6 @@ namespace TestTask_GZipArchiver.Core.Services
                 {
                     using (var gzips = new GZipStream(outputFS, CompressionMode.Compress))
                     {
-                        //byte[] readData = new byte[0];
-                        //byte[] dataToWrite = new byte[0];
-
                         var data = new Queue<DataBlock>();
 
                         var writeLocker = new AutoResetEvent(true);
@@ -76,7 +73,7 @@ namespace TestTask_GZipArchiver.Core.Services
 
                         while (true)
                         {
-                            if (data.Count > 1)
+                            if (data.Count > 2)
                             {
                                 readLocker.WaitOne(); 
                             }
@@ -122,8 +119,7 @@ namespace TestTask_GZipArchiver.Core.Services
                 {
                     using (var gzips = new GZipBlockStream(inputFS, CompressionMode.Decompress, _settings.BlockSize))
                     {
-                        byte[] readData = new byte[0];
-                        byte[] dataToWrite = new byte[0];
+                        var data = new Queue<DataBlock>();
 
                         var writeLocker = new AutoResetEvent(true);
                         var readLocker = new AutoResetEvent(true);
@@ -132,19 +128,22 @@ namespace TestTask_GZipArchiver.Core.Services
                         var writingThread = new Thread(() =>
                         {
                             var isLastBlock = false;
-                            long bytesProceeded = 0;
 
                             while (!isLastBlock)
                             {
-                                writeLocker.WaitOne();
-                                dataToWrite = (byte[])readData.Clone();
-                                bytesProceeded = inputFS.Position;
+                                if (data.Count == 0)
+                                {
+                                    writeLocker.WaitOne(); 
+                                }
+
+                                var dataToWrite = data.Dequeue();
                                 readLocker.Set();
-                                outputFS.Write(dataToWrite);
 
-                                Console.Write($"\r{bytesProceeded * 100 / inputFS.Length}% were decompressed.");
+                                outputFS.Write(dataToWrite.Data);
 
-                                if (dataToWrite.Length < _settings.BlockSize)
+                                Console.Write($"\r{dataToWrite.StreamPosition * 100 / inputFS.Length}% were decompressed.");
+
+                                if (dataToWrite.Data.Length < _settings.BlockSize)
                                 {
                                     isLastBlock = true;
                                 }
@@ -156,14 +155,19 @@ namespace TestTask_GZipArchiver.Core.Services
 
                         while (true)
                         {
-                            readLocker.WaitOne();
-                            readData = gzips.GetBytesBlock();
+                            if (data.Count > 2)
+                            {
+                                readLocker.WaitOne(); 
+                            }
+
+                            var readData = gzips.GetBytesBlock();
 
                             if (readData.Length <= 0)
                             {
                                 break;
                             }
 
+                            data.Enqueue(new DataBlock(readData, inputFS.Position));
                             writeLocker.Set();
 
                             if (!writingThread.IsAlive)
