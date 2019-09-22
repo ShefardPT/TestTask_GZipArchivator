@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using TestTask_GZipArchiver.Core.Models;
@@ -45,6 +46,9 @@ namespace TestTask_GZipArchiver
 
                 var archiverAction = actionDict[RunningArguments.Current.CompressionMode];
 
+                var watch = new Stopwatch();
+                watch.Start();
+
                 try
                 {
                     archiverAction.Invoke(RunningArguments.Current.InputPath, RunningArguments.Current.OutputPath);
@@ -77,7 +81,10 @@ namespace TestTask_GZipArchiver
                     return;
                 }
 
+                watch.Stop();
+
                 Console.WriteLine("Done!");
+                Console.WriteLine($"It had taken {watch.ElapsedMilliseconds / 1000}.{watch.ElapsedMilliseconds % 1000} seconds to do job.");
                 Console.WriteLine("Press ENTER to finish.");
                 Console.ReadLine();
             }
