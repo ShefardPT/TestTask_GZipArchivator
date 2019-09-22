@@ -20,34 +20,6 @@ namespace TestTask_GZipArchiver.Tests
         }
 
         [Test]
-        public void Should_copy_file()
-        {
-            var inputFile = new FileInfo("..\\..\\..\\files\\file_to_compress.pdf");
-            var outputFile = new FileInfo("..\\..\\..\\files\\file_to_compress1.pdf");
-
-            using (var inputFS = inputFile.OpenRead())
-            {
-                using (var outputFS = outputFile.OpenWrite())
-                {
-                    var bytesCount = 1024;
-                    var data = new byte[bytesCount];
-
-                    while (inputFS.Read(data) > 0)
-                    {
-                        if (inputFS.Position > inputFS.Length - bytesCount)
-                        {
-
-                        }
-
-                        outputFS.Write(data);
-                    }
-                }
-            }
-
-            Assert.Pass();
-        }
-
-        [Test]
         public void Should_compress_file()
         {
             var inputFile = new FileInfo("..\\..\\..\\files\\file_to_compress.pdf");
