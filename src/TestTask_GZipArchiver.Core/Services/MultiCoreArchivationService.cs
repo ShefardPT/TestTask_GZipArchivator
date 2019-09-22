@@ -13,20 +13,13 @@ namespace TestTask_GZipArchiver.Core.Services
     {
         private ApplicationSettings _settings;
         private string _instanceId;
-        private Semaphore _semaphore;
         private ValidationService _validationSrv;
 
         public MultiCoreArchivationService()
         {
             _settings = ApplicationSettings.Current;
             _instanceId = Guid.NewGuid().ToString("N");
-            _semaphore = new Semaphore(_settings.ThreadsCount, _settings.ThreadsCount, _instanceId);
             _validationSrv = new ValidationService();
-        }
-
-        ~MultiCoreArchivationService()
-        {
-            _semaphore.Dispose();
         }
 
         // Compresses any non-gzip file to GZip archive
@@ -64,7 +57,7 @@ namespace TestTask_GZipArchiver.Core.Services
                                 readLocker.Set();
                                 gzips.Write(dataToWrite);
 
-                                Console.Write($"\r{inputFS.Length / bytesProceeded}% were compressed.");
+                                Console.Write($"\r{bytesProceeded * 100 / inputFS.Length}% were compressed.");
 
                                 if (dataToWrite.Length < inputFS.BlockSize)
                                 {
@@ -112,55 +105,69 @@ namespace TestTask_GZipArchiver.Core.Services
                 throw new ArgumentException("The specified input file is not GZip archive.");
             }
 
-            Console.WriteLine("Getting info about the input archive.");
-
-            var blocksMap = new GZipBlocksMap(input, _settings.BlockSize);
-
-            Console.WriteLine($"Info has been read. Size of unzipped file is {blocksMap.UnzippedLength} bytes.");
-
-            var inputFileStream = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var outputFileStream = new FileStream(output, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            var gzipStream = new GZipBlockStream(inputFileStream, CompressionMode.Decompress, blocksMap);
-
-            int blocksCount = gzipStream.BlocksCount;
-
-            Console.WriteLine($"{blocksCount} blocks are awaiting to be proceeded.");
-
-            var queueSynchronizer = new QueueSynchronizer();
-            var countdownEvent = new CountdownEvent(blocksCount);
-
-            for (int i = 0; i < blocksCount; i++)
+            using (var inputFS = new FileStream(input, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
-                _semaphore.WaitOne();
-
-                var thread = new Thread(() =>
+                using (var outputFS = new FileStream(output, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
                 {
-                    var dataBlock = gzipStream.GetBlockBytes();
+                    using (var gzips = new GZipBlockStream(inputFS, CompressionMode.Decompress, _settings.BlockSize))
+                    {
+                        byte[] readData = new byte[0];
+                        byte[] dataToWrite = new byte[0];
 
-                    queueSynchronizer.GetInQueue(dataBlock.BlockNumber);
+                        var writeLocker = new AutoResetEvent(true);
+                        var readLocker = new AutoResetEvent(true);
+                        var workIsDoneLocker = new ManualResetEvent(false);
 
-                    outputFileStream.Write(dataBlock.Data);
+                        var writingThread = new Thread(() =>
+                        {
+                            var isLastBlock = false;
+                            long bytesProceeded = 0;
 
-                    queueSynchronizer.LeaveQueue(dataBlock.BlockNumber);
-                    _semaphore.Release();
+                            while (!isLastBlock)
+                            {
+                                writeLocker.WaitOne();
+                                dataToWrite = (byte[])readData.Clone();
+                                bytesProceeded = inputFS.Position;
+                                readLocker.Set();
+                                outputFS.Write(dataToWrite);
 
-                    Console.Write($"\r{dataBlock.BlockNumber + 1} of {blocksCount} blocks have been proceeded.");
+                                Console.Write($"\r{bytesProceeded * 100 / inputFS.Length}% were decompressed.");
 
-                    countdownEvent.Signal();
-                });
+                                if (dataToWrite.Length < _settings.BlockSize)
+                                {
+                                    isLastBlock = true;
+                                }
+                            }
 
-                thread.Start();
+                            Console.Write("\n");
+                            workIsDoneLocker.Set();
+                        });
+
+                        while (true)
+                        {
+                            readLocker.WaitOne();
+                            readData = gzips.GetBytesBlock();
+
+                            if (readData.Length <= 0)
+                            {
+                                break;
+                            }
+
+                            writeLocker.Set();
+
+                            if (!writingThread.IsAlive)
+                            {
+                                writingThread.Start();
+                            }
+                        };
+
+                        workIsDoneLocker.WaitOne();
+                        workIsDoneLocker.Dispose();
+                        readLocker.Dispose();
+                        writeLocker.Dispose();
+                    }
+                }
             }
-
-            countdownEvent.Wait();
-
-            Console.Write("\n");
-
-            countdownEvent.Dispose();
-            queueSynchronizer.Dispose();
-            gzipStream.Dispose();
-            outputFileStream.Dispose();
-            inputFileStream.Dispose();
         }
     }
 }

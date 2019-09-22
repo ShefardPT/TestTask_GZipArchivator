@@ -6,6 +6,6 @@ namespace TestTask_GZipArchiver.Core.Models.Interfaces
 {
     public interface IGZipBlockStream : IBlockStream
     {
-        DataBlock GetBlockBytes();
+
     }
 }
