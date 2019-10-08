@@ -10,13 +10,11 @@ namespace TestTask_GZipArchiver.Core.Models
     {
         private ManualResetEvent _lock;
         private int _awaitedPos;
-        private ConcurrentDictionary<int, ManualResetEvent> _queueDict;
         
         public QueueSynchronizer()
         {
             _lock = new ManualResetEvent(false);
             _awaitedPos = 0;
-            _queueDict = new ConcurrentDictionary<int, ManualResetEvent>();
         }
 
         ~QueueSynchronizer()
@@ -45,6 +43,12 @@ namespace TestTask_GZipArchiver.Core.Models
             _lock.Set();
 
             //Console.WriteLine($"Block {_awaitedPos} has been passed.");
+        }
+
+        public void Reset()
+        {
+            _awaitedPos = 0;
+            _lock.Reset();
         }
 
         public void Dispose()

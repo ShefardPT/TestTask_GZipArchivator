@@ -8,11 +8,13 @@ namespace TestTask_GZipArchiver.Core.Models
     {
         public byte[] Data { get; private set; }
         public long StreamPosition { get; private set; }
+        public int BlockNumber { get; private set; }
 
-        public DataBlock(byte[] data, long streamPosition)
+        public DataBlock(byte[] data, long streamPosition, int blockNumber)
         {
             Data = data;
             StreamPosition = streamPosition;
+            BlockNumber = blockNumber;
         }
     }
 }

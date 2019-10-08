@@ -37,69 +37,54 @@ namespace TestTask_GZipArchiver.Core.Services
                 {
                     using (var gzips = new GZipStream(outputFS, CompressionMode.Compress))
                     {
-                        var data = new Queue<DataBlock>();
-
-                        var writeLocker = new AutoResetEvent(false);
+                        var workIsDoneCountdown = new CountdownEvent(_settings.ThreadsCount);
+                        var queueSync = new QueueSynchronizer();
                         var readLocker = new AutoResetEvent(true);
-                        var workIsDoneLocker = new ManualResetEvent(false);
+                        var posCounter = 0;
+                        var fileIsRead = false;
 
-                        var writingThread = new Thread(() =>
+                        var threadPool = new Thread[_settings.ThreadsCount];
+
+                        for (int i = 0; i < threadPool.Length; i++)
                         {
-                            var isLastBlock = false;
-
-                            while (!isLastBlock)
+                            threadPool[i] = new Thread(() =>
                             {
-                                if (data.Count == 0)
+                                while (!fileIsRead)
                                 {
-                                    writeLocker.WaitOne(); 
+                                    // Protecting concurrency read operation
+                                    readLocker.WaitOne();
+                                    var dataBlock = new DataBlock(inputFS.GetBytesBlock(), inputFS.Position, posCounter);
+                                    posCounter++;
+                                    readLocker.Set();
+
+                                    if (dataBlock.Data.Length < inputFS.BlockSize)
+                                    {
+                                        fileIsRead = true;
+
+                                        if (dataBlock.Data.Length == 0)
+                                        {
+                                            break;
+                                        }
+                                    }
+
+                                    queueSync.GetInQueue(dataBlock.BlockNumber);
+                                    gzips.Write(dataBlock.Data);
+                                    Console.Write($"\r{dataBlock.StreamPosition * 100 / inputFS.Length}% were compressed.");
+                                    queueSync.LeaveQueue(dataBlock.BlockNumber); 
                                 }
 
-                                var dataToWrite = data.Dequeue();
-                                writeLocker.Reset();
-                                readLocker.Set();
+                                workIsDoneCountdown.Signal();
+                            });
+                        }
 
-                                gzips.Write(dataToWrite.Data);
-
-                                Console.Write($"\r{dataToWrite.StreamPosition * 100 / inputFS.Length}% were compressed.");
-
-                                if (dataToWrite.Data.Length < _settings.BlockSize)
-                                {
-                                    isLastBlock = true;
-                                }
-                            }
-
-                            Console.Write("\n");
-                            workIsDoneLocker.Set();
-                        });
-
-                        while (true)
+                        foreach (var thread in threadPool)
                         {
-                            if (data.Count > 1)
-                            {
-                                readLocker.WaitOne(); 
-                            }
+                            thread.Start();
+                        }
 
-                            var readData = inputFS.GetBytesBlock();
-
-                            if (readData.Length <= 0)
-                            {
-                                break;
-                            }
-
-                            data.Enqueue(new DataBlock(readData,inputFS.Position));
-                            readLocker.Reset();
-                            writeLocker.Set();
-
-                            if (!writingThread.IsAlive)
-                            {
-                                writingThread.Start();
-                            }
-                        };
-                        
-                        workIsDoneLocker.WaitOne();
-                        workIsDoneLocker.Dispose();
-                        readLocker.Dispose();
-                        writeLocker.Dispose();
+                        workIsDoneCountdown.Wait();
+                        workIsDoneCountdown.Dispose();
+                        queueSync.Dispose();
                     }
                 }
             }
@@ -134,7 +119,7 @@ namespace TestTask_GZipArchiver.Core.Services
                             {
                                 if (data.Count == 0)
                                 {
-                                    writeLocker.WaitOne(); 
+                                    writeLocker.WaitOne();
                                 }
 
                                 var dataToWrite = data.Dequeue();
@@ -159,7 +144,7 @@ namespace TestTask_GZipArchiver.Core.Services
                         {
                             if (data.Count > 1)
                             {
-                                readLocker.WaitOne(); 
+                                readLocker.WaitOne();
                             }
 
                             var readData = gzips.GetBytesBlock();
@@ -169,7 +154,7 @@ namespace TestTask_GZipArchiver.Core.Services
                                 break;
                             }
 
-                            data.Enqueue(new DataBlock(readData, inputFS.Position));
+                            data.Enqueue(new DataBlock(readData, inputFS.Position, 0));
                             readLocker.Reset();
                             writeLocker.Set();
 
