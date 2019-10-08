@@ -28,11 +28,9 @@ namespace TestTask_GZipArchiver.Core.Models
         {
             //Console.WriteLine($"Block {pos} has got in queue.");
 
-            var locker = _queueDict.GetOrAdd(pos,new ManualResetEvent(false));
-
             while (pos != _awaitedPos)
             {
-                locker.WaitOne();
+                _lock.WaitOne();
             }
         }
 
@@ -40,23 +38,12 @@ namespace TestTask_GZipArchiver.Core.Models
         {
             //Console.WriteLine($"Block {pos} is trying to leave the queue.");
             
-            if (_queueDict.TryGetValue(pos, out var locker))
-            {
-                if (_queueDict.TryRemove(pos, out locker))
-                {
-                    locker.Dispose();
-                }
-            }
-            
             //Console.WriteLine($"Block {pos} has left queue.");
-
+            
             _awaitedPos++;
 
-            if (_queueDict.TryGetValue(_awaitedPos, out var nextLocker))
-            {
-                nextLocker.Set();
-            }
-            
+            _lock.Set();
+
             //Console.WriteLine($"Block {_awaitedPos} has been passed.");
         }
 
