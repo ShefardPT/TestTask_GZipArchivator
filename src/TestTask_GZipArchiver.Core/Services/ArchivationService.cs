@@ -139,7 +139,6 @@ namespace TestTask_GZipArchiver.Core.Services
                     var blocksCount = BitConverter.ToInt32(blocksCountHeader);
 
                     var blocksMap = new long[blocksCount];
-
                     for (int i = 0; i < blocksCount; i++)
                     {
                         var blockSizeHeader = new byte[8];
