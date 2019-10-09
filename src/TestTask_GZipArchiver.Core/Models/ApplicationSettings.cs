@@ -16,7 +16,7 @@ namespace TestTask_GZipArchiver.Core.Models
 
         private ApplicationSettings()
         {
-            BlockSize = 1024 * 1024 * 16;
+            BlockSize = 1024 * 1024 * 4;
             ThreadsCount = Environment.ProcessorCount;
         }
 

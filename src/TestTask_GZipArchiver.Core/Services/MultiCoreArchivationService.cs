@@ -35,57 +35,63 @@ namespace TestTask_GZipArchiver.Core.Services
             {
                 using (var outputFS = new FileStream(output, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
                 {
-                    using (var gzips = new GZipStream(outputFS, CompressionMode.Compress))
+                    var workIsDoneCountdown = new CountdownEvent(_settings.ThreadsCount);
+                    var queueSync = new QueueSynchronizer();
+                    var readLocker = new AutoResetEvent(true);
+                    var posCounter = 0;
+                    var fileIsRead = false;
+
+                    var threadPool = new Thread[_settings.ThreadsCount];
+
+                    for (int i = 0; i < threadPool.Length; i++)
                     {
-                        var workIsDoneCountdown = new CountdownEvent(_settings.ThreadsCount);
-                        var queueSync = new QueueSynchronizer();
-                        var readLocker = new AutoResetEvent(true);
-                        var posCounter = 0;
-                        var fileIsRead = false;
-
-                        var threadPool = new Thread[_settings.ThreadsCount];
-
-                        for (int i = 0; i < threadPool.Length; i++)
+                        threadPool[i] = new Thread(() =>
                         {
-                            threadPool[i] = new Thread(() =>
+                            while (!fileIsRead)
                             {
-                                while (!fileIsRead)
+                                // Protecting concurrency read operation
+                                readLocker.WaitOne();
+                                var dataBlock = new DataBlock(inputFS.GetBytesBlock(), inputFS.Position, posCounter);
+                                posCounter++;
+                                readLocker.Set();
+
+                                if (dataBlock.Data.Length < inputFS.BlockSize)
                                 {
-                                    // Protecting concurrency read operation
-                                    readLocker.WaitOne();
-                                    var dataBlock = new DataBlock(inputFS.GetBytesBlock(), inputFS.Position, posCounter);
-                                    posCounter++;
-                                    readLocker.Set();
+                                    fileIsRead = true;
 
-                                    if (dataBlock.Data.Length < inputFS.BlockSize)
+                                    if (dataBlock.Data.Length == 0)
                                     {
-                                        fileIsRead = true;
+                                        break;
+                                    }
+                                }
 
-                                        if (dataBlock.Data.Length == 0)
-                                        {
-                                            break;
-                                        }
+                                using (var ms = new MemoryStream())
+                                {
+                                    using (var gzips = new GZipStream(ms, CompressionMode.Compress))
+                                    {
+                                        gzips.Write(dataBlock.Data);
                                     }
 
                                     queueSync.GetInQueue(dataBlock.BlockNumber);
-                                    gzips.Write(dataBlock.Data);
+                                    outputFS.Write(ms.ToArray());
                                     Console.Write($"\r{dataBlock.StreamPosition * 100 / inputFS.Length}% were compressed.");
-                                    queueSync.LeaveQueue(dataBlock.BlockNumber); 
+                                    queueSync.LeaveQueue(dataBlock.BlockNumber);
                                 }
+                            }
 
-                                workIsDoneCountdown.Signal();
-                            });
-                        }
-
-                        foreach (var thread in threadPool)
-                        {
-                            thread.Start();
-                        }
-
-                        workIsDoneCountdown.Wait();
-                        workIsDoneCountdown.Dispose();
-                        queueSync.Dispose();
+                            workIsDoneCountdown.Signal();
+                        });
                     }
+
+                    foreach (var thread in threadPool)
+                    {
+                        thread.Start();
+                    }
+
+                    workIsDoneCountdown.Wait();
+                    workIsDoneCountdown.Dispose();
+                    readLocker.Dispose();
+                    queueSync.Dispose();
                 }
             }
         }
@@ -99,76 +105,65 @@ namespace TestTask_GZipArchiver.Core.Services
                 throw new ArgumentException("The specified input file is not GZip archive.");
             }
 
-            using (var inputFS = new FileStream(input, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+            using (var inputFS = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.None, _settings.BlockSize))
             {
                 using (var outputFS = new FileStream(output, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
                 {
-                    using (var gzips = new GZipBlockStream(inputFS, CompressionMode.Decompress, _settings.BlockSize))
+                    var workIsDoneCountdown = new CountdownEvent(_settings.ThreadsCount);
+                    var queueSync = new QueueSynchronizer();
+                    var readLocker = new AutoResetEvent(true);
+                    var posCounter = 0;
+                    var fileIsRead = false;
+
+                    var threadPool = new Thread[_settings.ThreadsCount];
+
+                    for (int i = 0; i < threadPool.Length; i++)
                     {
-                        var data = new Queue<DataBlock>();
-
-                        var writeLocker = new AutoResetEvent(false);
-                        var readLocker = new AutoResetEvent(true);
-                        var workIsDoneLocker = new ManualResetEvent(false);
-
-                        var writingThread = new Thread(() =>
+                        threadPool[i] = new Thread(() =>
                         {
-                            var isLastBlock = false;
-
-                            while (!isLastBlock)
+                            while (!fileIsRead)
                             {
-                                if (data.Count == 0)
+                                DataBlock dataBlock;
+
+                                using (var gzips = new GZipBlockStream(inputFS, CompressionMode.Decompress, true,
+                                    _settings.BlockSize))
                                 {
-                                    writeLocker.WaitOne();
+                                    // Protecting concurrency read operation
+                                    readLocker.WaitOne();
+                                    dataBlock = new DataBlock(gzips.GetBytesBlock(), inputFS.Position, posCounter);
+                                    posCounter++;
+                                    readLocker.Set();
+
+                                    if (dataBlock.Data.Length < gzips.BlockSize)
+                                    {
+                                        fileIsRead = true;
+
+                                        if (dataBlock.Data.Length == 0)
+                                        {
+                                            break;
+                                        }
+                                    }
                                 }
 
-                                var dataToWrite = data.Dequeue();
-                                writeLocker.Reset();
-                                readLocker.Set();
+                                queueSync.GetInQueue(dataBlock.BlockNumber);
+                                outputFS.Write(dataBlock.Data);
+                                Console.Write($"\r{dataBlock.StreamPosition * 100 / inputFS.Length}% were compressed.");
+                                queueSync.LeaveQueue(dataBlock.BlockNumber);
 
-                                outputFS.Write(dataToWrite.Data);
-
-                                Console.Write($"\r{dataToWrite.StreamPosition * 100 / inputFS.Length}% were decompressed.");
-
-                                if (dataToWrite.Data.Length < _settings.BlockSize)
-                                {
-                                    isLastBlock = true;
-                                }
+                                workIsDoneCountdown.Signal();
                             }
-
-                            Console.Write("\n");
-                            workIsDoneLocker.Set();
                         });
-
-                        while (true)
-                        {
-                            if (data.Count > 1)
-                            {
-                                readLocker.WaitOne();
-                            }
-
-                            var readData = gzips.GetBytesBlock();
-
-                            if (readData.Length <= 0)
-                            {
-                                break;
-                            }
-
-                            data.Enqueue(new DataBlock(readData, inputFS.Position, 0));
-                            readLocker.Reset();
-                            writeLocker.Set();
-
-                            if (!writingThread.IsAlive)
-                            {
-                                writingThread.Start();
-                            }
-                        };
-
-                        workIsDoneLocker.WaitOne();
-                        workIsDoneLocker.Dispose();
-                        readLocker.Dispose();
-                        writeLocker.Dispose();
                     }
+
+                    foreach (var thread in threadPool)
+                    {
+                        thread.Start();
+                    }
+
+                    workIsDoneCountdown.Wait();
+                    workIsDoneCountdown.Dispose();
+                    readLocker.Dispose();
+                    queueSync.Dispose();
                 }
             }
         }
