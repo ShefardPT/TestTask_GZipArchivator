@@ -41,6 +41,13 @@ namespace TestTask_GZipArchiver.Core.Services
                     var posCounter = 0;
                     var fileIsRead = false;
 
+                    // That is needed to decompress
+                    int blocksCount = (int)(inputFS.Length / inputFS.BlockSize + 1);
+                    var header = new byte[4 + 8 * blocksCount];
+                    var blocksMap = new List<long>();
+
+                    outputFS.Write(header);
+
                     var threadPool = new Thread[_settings.ThreadsCount];
 
                     for (int i = 0; i < threadPool.Length; i++)
@@ -67,13 +74,14 @@ namespace TestTask_GZipArchiver.Core.Services
 
                                 using (var ms = new MemoryStream())
                                 {
-                                    using (var gzips = new GZipStream(ms, CompressionMode.Compress))
+                                    using (var gzips = new GZipStream(ms, CompressionMode.Compress, true))
                                     {
                                         gzips.Write(dataBlock.Data);
                                     }
 
                                     queueSync.GetInQueue(dataBlock.BlockNumber);
                                     outputFS.Write(ms.ToArray());
+                                    blocksMap.Add(ms.Length);
                                     Console.Write($"\r{dataBlock.StreamPosition * 100 / inputFS.Length}% were compressed.");
                                     queueSync.LeaveQueue(dataBlock.BlockNumber);
                                 }
@@ -89,6 +97,15 @@ namespace TestTask_GZipArchiver.Core.Services
                     }
 
                     workIsDoneCountdown.Wait();
+
+                    outputFS.Seek(0, SeekOrigin.Begin);
+                    outputFS.Write(BitConverter.GetBytes(blocksCount));
+
+                    for (int i = 0; i < blocksMap.Count; i++)
+                    {
+                        outputFS.Write(BitConverter.GetBytes(blocksMap[i]));
+                    }
+
                     workIsDoneCountdown.Dispose();
                     readLocker.Dispose();
                     queueSync.Dispose();
@@ -115,6 +132,19 @@ namespace TestTask_GZipArchiver.Core.Services
                     var posCounter = 0;
                     var fileIsRead = false;
 
+                    var blocksCountHeader = new byte[4];
+                    inputFS.Read(blocksCountHeader);
+                    var blocksCount = BitConverter.ToInt32(blocksCountHeader);
+
+                    var blocksMap = new long[blocksCount];
+
+                    for (int i = 0; i < blocksCount; i++)
+                    {
+                        var blockSizeHeader = new byte[8];
+                        inputFS.Read(blockSizeHeader);
+                        blocksMap[i] = BitConverter.ToInt64(blockSizeHeader);
+                    }
+
                     var threadPool = new Thread[_settings.ThreadsCount];
 
                     for (int i = 0; i < threadPool.Length; i++)
@@ -123,35 +153,43 @@ namespace TestTask_GZipArchiver.Core.Services
                         {
                             while (!fileIsRead)
                             {
+                                readLocker.WaitOne();
+
                                 DataBlock dataBlock;
 
-                                using (var gzips = new GZipBlockStream(inputFS, CompressionMode.Decompress, true,
-                                    _settings.BlockSize))
+                                if (posCounter < blocksCount)
                                 {
-                                    // Protecting concurrency read operation
-                                    readLocker.WaitOne();
-                                    dataBlock = new DataBlock(gzips.GetBytesBlock(), inputFS.Position, posCounter);
+                                    var data = new byte[blocksMap[posCounter]];
+                                    inputFS.Read(data);
+                                    dataBlock = new DataBlock(data, inputFS.Position, posCounter);
                                     posCounter++;
-                                    readLocker.Set();
-
-                                    if (dataBlock.Data.Length < gzips.BlockSize)
-                                    {
-                                        fileIsRead = true;
-
-                                        if (dataBlock.Data.Length == 0)
-                                        {
-                                            break;
-                                        }
-                                    }
+                                }
+                                else
+                                {
+                                    fileIsRead = true;
+                                    break;
                                 }
 
-                                queueSync.GetInQueue(dataBlock.BlockNumber);
-                                outputFS.Write(dataBlock.Data);
-                                Console.Write($"\r{dataBlock.StreamPosition * 100 / inputFS.Length}% were compressed.");
-                                queueSync.LeaveQueue(dataBlock.BlockNumber);
+                                readLocker.Set();
 
-                                workIsDoneCountdown.Signal();
+                                using (var decompressedDataMS = new MemoryStream())
+                                {
+                                    using (var compressedDataMS = new MemoryStream(dataBlock.Data))
+                                    {
+                                        using (var gzips = new GZipStream(compressedDataMS, CompressionMode.Decompress))
+                                        {
+                                            gzips.CopyTo(decompressedDataMS);
+                                        }
+                                    }
+
+                                    queueSync.GetInQueue(dataBlock.BlockNumber);
+                                    outputFS.Write(decompressedDataMS.ToArray());
+                                    Console.Write($"\r{dataBlock.StreamPosition * 100 / inputFS.Length}% were compressed.");
+                                    queueSync.LeaveQueue(dataBlock.BlockNumber);
+                                }
                             }
+
+                            workIsDoneCountdown.Signal();
                         });
                     }
 
