@@ -59,6 +59,7 @@ namespace TestTask_GZipArchiver.Core.Models
                     ("Compression mode was set is invalid. Use \"gziparchiver -h\" to get help.");
             }
 
+            // TODO The question is should be paths checked here or in special class.
             var inputFile = new FileInfo(args[1]);
             if (!inputFile.Exists)
             {

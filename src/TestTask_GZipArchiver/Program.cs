@@ -13,6 +13,7 @@ namespace TestTask_GZipArchiver
     {
         static void Main(string[] args)
         {
+            // TODO Replace with event
             Console.WriteLine("Program has been started.");
 
             try
@@ -25,6 +26,7 @@ namespace TestTask_GZipArchiver
                 return;
             }
 
+            // TODO Replace with event
             Console.WriteLine("Arguments have been set.");
 
             if (RunningArguments.Current.DoShowHelp)
@@ -81,6 +83,7 @@ namespace TestTask_GZipArchiver
 
                 watch.Stop();
 
+                // TODO Replace with event
                 Console.WriteLine("Done!");
                 Console.WriteLine($"It had taken {watch.ElapsedMilliseconds / 1000}.{watch.ElapsedMilliseconds % 1000} seconds to do job.");
                 Console.WriteLine("Press ENTER to finish.");

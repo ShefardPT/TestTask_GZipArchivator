@@ -42,6 +42,7 @@ namespace TestTask_GZipArchiver.Core.Services
                     var fileIsRead = false;
 
                     // That is needed to decompression and validation
+                    // TODO Headers processing may be possibly improved
                     int blocksCount = (int)(inputFS.Length / inputFS.BlockSize + 1);
                     var header = new byte[4 + 4 + 8 * blocksCount];
                     var blocksMap = new List<long>();
@@ -98,6 +99,7 @@ namespace TestTask_GZipArchiver.Core.Services
 
                     workIsDoneCountdown.Wait();
 
+                    // TODO Headers processing may be possibly improved
                     outputFS.Seek(0, SeekOrigin.Begin);
                     outputFS.Write(BitConverter.GetBytes(_settings.TTGZipFormatSignature));
                     outputFS.Write(BitConverter.GetBytes(blocksCount));
@@ -133,6 +135,7 @@ namespace TestTask_GZipArchiver.Core.Services
                     var posCounter = 0;
                     var fileIsRead = false;
 
+                    // TODO Headers processing may be possibly improved
                     var blocksCountHeader = new byte[4];
                     inputFS.Seek(4, SeekOrigin.Begin);
                     inputFS.Read(blocksCountHeader);
@@ -173,6 +176,7 @@ namespace TestTask_GZipArchiver.Core.Services
 
                                 readLocker.Set();
 
+                                // TODO Think about could decompressedMS be replaced by bytes array
                                 using (var decompressedDataMS = new MemoryStream())
                                 {
                                     using (var compressedDataMS = new MemoryStream(dataBlock.Data))

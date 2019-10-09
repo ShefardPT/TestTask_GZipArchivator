@@ -6,6 +6,7 @@ using System.Threading;
 namespace TestTask_GZipArchiver.Core.Models
 {
     // Forses threads do their job (or part of it) one by one strictly.
+    // TODO It can be possibly improved
     public class QueueSynchronizer : IDisposable
     {
         private ManualResetEvent _lock;
