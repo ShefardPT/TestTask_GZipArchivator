@@ -9,6 +9,7 @@ namespace TestTask_GZipArchiver.Core.Models
     {
         private static ApplicationSettings _instance = new ApplicationSettings();
         private static bool _isInitialized;
+        public readonly int TTGZipFormatSignature = 19940909;
 
         public int ThreadsCount { get; set; }
         // Size of block lower than 1 MB strictly NOT recommended

@@ -9,13 +9,13 @@ using TestTask_GZipArchiver.Core.Services.Interfaces;
 
 namespace TestTask_GZipArchiver.Core.Services
 {
-    public class MultiCoreArchivationService : IArchivationService
+    public class ArchivationService : IArchivationService
     {
         private ApplicationSettings _settings;
         private string _instanceId;
         private ValidationService _validationSrv;
 
-        public MultiCoreArchivationService()
+        public ArchivationService()
         {
             _settings = ApplicationSettings.Current;
             _instanceId = Guid.NewGuid().ToString("N");
@@ -25,7 +25,7 @@ namespace TestTask_GZipArchiver.Core.Services
         // Compresses any non-gzip file to GZip archive
         public void CompressFile(string input, string output)
         {
-            var inputFileCheck = _validationSrv.IsFileGZipArchive(input);
+            var inputFileCheck = _validationSrv.IsFileTTGZipArchive(input);
             if (inputFileCheck.IsValid)
             {
                 throw new ArgumentException("The specified input file is GZip archive already.");
@@ -41,9 +41,9 @@ namespace TestTask_GZipArchiver.Core.Services
                     var posCounter = 0;
                     var fileIsRead = false;
 
-                    // That is needed to decompress
+                    // That is needed to decompression and validation
                     int blocksCount = (int)(inputFS.Length / inputFS.BlockSize + 1);
-                    var header = new byte[4 + 8 * blocksCount];
+                    var header = new byte[4 + 4 + 8 * blocksCount];
                     var blocksMap = new List<long>();
 
                     outputFS.Write(header);
@@ -99,6 +99,7 @@ namespace TestTask_GZipArchiver.Core.Services
                     workIsDoneCountdown.Wait();
 
                     outputFS.Seek(0, SeekOrigin.Begin);
+                    outputFS.Write(BitConverter.GetBytes(_settings.TTGZipFormatSignature));
                     outputFS.Write(BitConverter.GetBytes(blocksCount));
 
                     for (int i = 0; i < blocksMap.Count; i++)
@@ -116,7 +117,7 @@ namespace TestTask_GZipArchiver.Core.Services
         // Decompress GZip file
         public void DecompressFile(string input, string output)
         {
-            var inputFileCheck = _validationSrv.IsFileGZipArchive(input);
+            var inputFileCheck = _validationSrv.IsFileTTGZipArchive(input);
             if (!inputFileCheck.IsValid)
             {
                 throw new ArgumentException("The specified input file is not GZip archive.");
@@ -133,6 +134,7 @@ namespace TestTask_GZipArchiver.Core.Services
                     var fileIsRead = false;
 
                     var blocksCountHeader = new byte[4];
+                    inputFS.Seek(4, SeekOrigin.Begin);
                     inputFS.Read(blocksCountHeader);
                     var blocksCount = BitConverter.ToInt32(blocksCountHeader);
 
