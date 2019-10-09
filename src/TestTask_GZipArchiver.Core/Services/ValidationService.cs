@@ -43,7 +43,7 @@ namespace TestTask_GZipArchiver.Core.Services
                 }
                 else
                 {
-                    return new ValidationResult(false, "Specified file is not .gz archive.");
+                    return new ValidationResult(false, "Specified file is not .ttgz archive.");
                 }
             }
         }
