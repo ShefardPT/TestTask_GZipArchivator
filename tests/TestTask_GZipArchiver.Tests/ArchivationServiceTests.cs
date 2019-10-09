@@ -10,9 +10,9 @@ using TestTask_GZipArchiver.Core.Services;
 namespace TestTask_GZipArchiver.Tests
 {
     [TestFixture]
-    public class MultiCoreArchivationServiceTests
+    public class ArchivationServiceTests
     {
-        private MultiCoreArchivationService _sut;
+        private ArchivationService _sut;
 
         private DirectoryInfo _testFilesDir;
         private FileInfo _fileToCompress;
@@ -21,7 +21,7 @@ namespace TestTask_GZipArchiver.Tests
         [SetUp]
         public void Init()
         {
-            _sut = new MultiCoreArchivationService();
+            _sut = new ArchivationService();
             _testFilesDir = new DirectoryInfo("..\\..\\..\\files");
 
             if (!_testFilesDir.Exists)

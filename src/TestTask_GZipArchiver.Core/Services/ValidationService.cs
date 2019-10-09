@@ -9,7 +9,7 @@ namespace TestTask_GZipArchiver.Core.Services
     public class ValidationService
     {
         // Checks if specified file is GZip archive.
-        public ValidationResult IsFileGZipArchive(string path)
+        public ValidationResult IsFileTTGZipArchive(string path)
         {
             var file = new FileInfo(path);
 
@@ -20,12 +20,11 @@ namespace TestTask_GZipArchiver.Core.Services
 
             using (var fs = file.OpenRead())
             {
-                // Try to extract gzip header
-                // More info at http://tools.ietf.org/html/rfc1952
-                byte[] header = new byte[3];
+                // Try to extract ttgzip header
+                byte[] signatureHeader = new byte[4];
                 try
                 {
-                    fs.Read(header, 0, 3);
+                    fs.Read(signatureHeader, 0, signatureHeader.Length);
                 }
                 catch (Exception ex)
                 {
@@ -35,8 +34,10 @@ namespace TestTask_GZipArchiver.Core.Services
                 {
                     fs.Close();
                 }
-                
-                if (header[0] == 31 && header[1] == 139 && header[2] == 8) //If magic numbers are 31 and 139 and the deflation id is 8 then it's OK
+
+                var signature = BitConverter.ToInt32(signatureHeader);
+
+                if (ApplicationSettings.Current.TTGZipFormatSignature == signature)
                 {
                     return new ValidationResult(true);
                 }

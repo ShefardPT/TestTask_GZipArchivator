@@ -11,7 +11,7 @@ namespace TestTask_GZipArchiver.Core.Models
         private ManualResetEvent _lock;
         private int _awaitedPos;
         private ConcurrentDictionary<int, ManualResetEvent> _queueDict;
-        
+
         public QueueSynchronizer()
         {
             _lock = new ManualResetEvent(false);
@@ -28,7 +28,7 @@ namespace TestTask_GZipArchiver.Core.Models
         {
             //Console.WriteLine($"Block {pos} has got in queue.");
 
-            var locker = _queueDict.GetOrAdd(pos,new ManualResetEvent(false));
+            var locker = _queueDict.GetOrAdd(pos, new ManualResetEvent(false));
 
             while (pos != _awaitedPos)
             {
@@ -39,7 +39,7 @@ namespace TestTask_GZipArchiver.Core.Models
         public void LeaveQueue(int pos)
         {
             //Console.WriteLine($"Block {pos} is trying to leave the queue.");
-            
+
             if (_queueDict.TryGetValue(pos, out var locker))
             {
                 if (_queueDict.TryRemove(pos, out locker))
@@ -47,7 +47,7 @@ namespace TestTask_GZipArchiver.Core.Models
                     locker.Dispose();
                 }
             }
-            
+
             //Console.WriteLine($"Block {pos} has left queue.");
 
             _awaitedPos++;
@@ -56,7 +56,7 @@ namespace TestTask_GZipArchiver.Core.Models
             {
                 nextLocker.Set();
             }
-            
+
             //Console.WriteLine($"Block {_awaitedPos} has been passed.");
         }
 
