@@ -24,7 +24,7 @@ namespace TestTask_GZipArchiver.Core.Services
                 byte[] signatureHeader = new byte[4];
                 try
                 {
-                    fs.Read(signatureHeader, 0, 3);
+                    fs.Read(signatureHeader, 0, signatureHeader.Length);
                 }
                 catch (Exception ex)
                 {

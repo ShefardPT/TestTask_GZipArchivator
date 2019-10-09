@@ -28,7 +28,7 @@ namespace TestTask_GZipArchiver.Core.Services
             var inputFileCheck = _validationSrv.IsFileTTGZipArchive(input);
             if (inputFileCheck.IsValid)
             {
-                throw new ArgumentException("The specified input file is GZip archive already.");
+                throw new ArgumentException("The specified input file is TTGZip archive already.");
             }
 
             using (var inputFS = new FileBlockStream(input, FileMode.Open, FileAccess.Read, FileShare.None, _settings.BlockSize))
@@ -120,7 +120,7 @@ namespace TestTask_GZipArchiver.Core.Services
             var inputFileCheck = _validationSrv.IsFileTTGZipArchive(input);
             if (!inputFileCheck.IsValid)
             {
-                throw new ArgumentException("The specified input file is not GZip archive.");
+                throw new ArgumentException("The specified input file is not TTGZip archive.");
             }
 
             using (var inputFS = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.None, _settings.BlockSize))
